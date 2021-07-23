@@ -44,12 +44,12 @@ func main() {
 	}
 	flag.Parse()
 
-	if len(os.Args) < 3 {
+	if flag.NArg() < 2 {
 		flag.Usage()
 		return
 	}
-	profile := os.Args[1]
-	filename := filepath.Clean(os.Args[2])
+	profile := flag.Arg(0)
+	filename := filepath.Clean(flag.Arg(1))
 	// Confirm that the spec file exists and contains valid JSON or YAML.
 	b, err := os.ReadFile(filename)
 	if err != nil {
