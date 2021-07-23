@@ -62,6 +62,7 @@ type Operation struct {
 	Method      string
 	Path        string
 	Parameters  []openapi3.Parameter
+	Deprecated  bool
 }
 
 // NewOperationFromSpec creates a new operation from the loaded specification.
@@ -72,6 +73,7 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 		Description: specOp.Description,
 		Method:      method,
 		Path:        path,
+		Deprecated:  specOp.Deprecated,
 	}
 	// Make it possible to run operations without an ID.
 	if op.ID == "" {

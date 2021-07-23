@@ -51,7 +51,11 @@ func main() {
 		for _, tag := range operations.Tags() {
 			fmt.Fprintf(os.Stdout, "    %v\n", tag)
 			for _, operation := range operations.ByTag(tag) {
-				fmt.Fprintf(os.Stdout, "        %v\t%v\n", operation.ID, operation.Summary)
+				operationID := operation.ID
+				if operation.Deprecated {
+					operationID = fmt.Sprintf("%v (deprecated)", operationID)
+				}
+				fmt.Fprintf(os.Stdout, "        %v\t%v\n", operationID, operation.Summary)
 			}
 		}
 		fmt.Fprintln(os.Stdout, "\nRun broom PROFILE OPERATION --help to view the available arguments for an operation.")
