@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"text/tabwriter"
 
 	"github.com/bojanz/broom"
 )
@@ -48,16 +49,18 @@ func main() {
 	if len(os.Args) < 3 {
 		usage()
 		fmt.Fprintln(os.Stdout, "\nOperations:")
+		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, tag := range operations.Tags() {
-			fmt.Fprintf(os.Stdout, "    %v\n", tag)
+			fmt.Fprintf(w, "\t%v\t\t\n", tag)
 			for _, operation := range operations.ByTag(tag) {
 				operationID := operation.ID
 				if operation.Deprecated {
 					operationID = fmt.Sprintf("%v (deprecated)", operationID)
 				}
-				fmt.Fprintf(os.Stdout, "        %v\t%v\n", operationID, operation.Summary)
+				fmt.Fprintf(w, "\t    %v\t%v\n", operationID, operation.Summary)
 			}
 		}
+		w.Flush()
 		fmt.Fprintln(os.Stdout, "\nRun broom PROFILE OPERATION --help to view the available arguments for an operation.")
 		return
 	}
