@@ -3,12 +3,24 @@ package broom
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"gopkg.in/yaml.v2"
 )
 
 // Config represents Broom's configuration.
 type Config map[string]ProfileConfig
+
+// Profiles returns a list of all configured profiles.
+func (c Config) Profiles() []string {
+	profiles := make([]string, 0, len(c))
+	for profile := range c {
+		profiles = append(profiles, profile)
+	}
+	sort.Strings(profiles)
+
+	return profiles
+}
 
 // ProfileConfig represents Broom's per-profile configuration.
 type ProfileConfig struct {
