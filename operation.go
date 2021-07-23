@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/iancoleman/strcase"
 )
 
 // Operations represents all available operations.
@@ -68,7 +69,7 @@ type Operation struct {
 // NewOperationFromSpec creates a new operation from the loaded specification.
 func NewOperationFromSpec(method string, path string, params openapi3.Parameters, specOp openapi3.Operation) Operation {
 	op := Operation{
-		ID:          specOp.OperationID,
+		ID:          strcase.ToKebab(specOp.OperationID),
 		Summary:     specOp.Summary,
 		Description: specOp.Description,
 		Method:      method,
