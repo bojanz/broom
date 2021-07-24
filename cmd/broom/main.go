@@ -6,7 +6,13 @@ import (
 	"os"
 	"text/tabwriter"
 
+	flag "github.com/spf13/pflag"
+
 	"github.com/bojanz/broom"
+)
+
+var (
+	help = flag.BoolP("help", "h", false, "Display this help text and exit")
 )
 
 func main() {
@@ -19,22 +25,17 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	usage := func() {
-		fmt.Fprintln(os.Stdout, "Usage: broom PROFILE OPERATION")
-		fmt.Fprintln(os.Stdout, "\nBroom is an API client powered by OpenAPI.")
-		fmt.Fprintln(os.Stdout, "\nProfiles:")
-		for _, profile := range cfg.Profiles() {
-			fmt.Fprintln(os.Stdout, "   ", profile)
-		}
+	flag.Usage = func() {
+		flag.PrintDefaults()
 	}
+	flag.Parse()
 
 	// No profile specified, can't list operations.
-	if len(os.Args) < 2 {
-		usage()
-		fmt.Fprintln(os.Stdout, "\nRun broom PROFILE to get a list of available operations.")
+	if flag.NArg() < 1 {
+		usage(cfg.Profiles())
 		return
 	}
-	profile := os.Args[1]
+	profile := flag.Arg(0)
 	profileCfg, ok := cfg[profile]
 	if !ok {
 		fmt.Fprintln(os.Stderr, "Error: unknown profile", profile)
@@ -46,8 +47,35 @@ func main() {
 		os.Exit(1)
 	}
 	// No operation specified, list all of them.
-	if len(os.Args) < 3 {
-		usage()
+	if flag.NArg() < 2 {
+		profileUsage(profile, profileCfg.ServerURL, operations)
+		return
+	}
+
+	operationID := flag.Arg(1)
+	_, ok = operations.ByID(operationID)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "Error: unknown operation", operationID)
+		return
+	}
+}
+
+// usage prints Broom usage.
+func usage(profiles []string) {
+	fmt.Fprintln(os.Stdout, "Usage: broom PROFILE OPERATION")
+	fmt.Fprintln(os.Stdout, "\nBroom is an API client powered by OpenAPI.")
+	fmt.Fprintln(os.Stdout, "\nProfiles:")
+	for _, profile := range profiles {
+		fmt.Fprintln(os.Stdout, "   ", profile)
+	}
+	fmt.Fprintln(os.Stdout, "\nRun broom PROFILE to get a list of available operations.")
+}
+
+// usage prints Broom usage for a single profile.
+func profileUsage(profile string, serverURL string, operations broom.Operations) {
+	fmt.Fprintln(os.Stdout, "Usage: broom", profile, "OPERATION")
+	fmt.Fprintln(os.Stdout, "\nRuns the specified operation on", serverURL)
+	if len(operations) > 0 {
 		fmt.Fprintln(os.Stdout, "\nOperations:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, tag := range operations.Tags() {
@@ -62,13 +90,5 @@ func main() {
 		}
 		w.Flush()
 		fmt.Fprintln(os.Stdout, "\nRun broom PROFILE OPERATION --help to view the available arguments for an operation.")
-		return
-	}
-
-	operationID := os.Args[2]
-	_, ok = operations.ByID(operationID)
-	if !ok {
-		fmt.Fprintln(os.Stderr, "Error: unknown operation", operationID)
-		return
 	}
 }
