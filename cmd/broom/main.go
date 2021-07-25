@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	flag "github.com/spf13/pflag"
@@ -12,7 +13,8 @@ import (
 )
 
 var (
-	help = flag.BoolP("help", "h", false, "Display this help text and exit")
+	help  = flag.BoolP("help", "h", false, "Display this help text and exit")
+	query = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
 )
 
 func main() {
@@ -53,10 +55,13 @@ func main() {
 	}
 
 	operationID := flag.Arg(1)
-	_, ok = operations.ByID(operationID)
+	operation, ok := operations.ByID(operationID)
 	if !ok {
 		fmt.Fprintln(os.Stderr, "Error: unknown operation", operationID)
 		return
+	}
+	if *help {
+		operationUsage(operation, profile)
 	}
 }
 
@@ -91,4 +96,45 @@ func profileUsage(profile string, serverURL string, operations broom.Operations)
 		w.Flush()
 		fmt.Fprintln(os.Stdout, "\nRun broom PROFILE OPERATION --help to view the available arguments for an operation.")
 	}
+}
+
+// operationUsage prints Broom usage for a single operation.
+func operationUsage(operation broom.Operation, profile string) {
+	sb := strings.Builder{}
+	sb.WriteString(operation.ID)
+	for _, param := range operation.ParametersIn("path") {
+		sb.WriteString(" ")
+		sb.WriteString(strings.ToUpper(param.Name))
+	}
+	summary := operation.Summary
+	if summary != "" && operation.Deprecated {
+		summary = fmt.Sprintf("%v (deprecated)", summary)
+	}
+	queryParams := operation.ParametersIn("query")
+
+	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
+	if summary != "" {
+		fmt.Fprintln(os.Stdout, "")
+		fmt.Fprintln(os.Stdout, summary)
+	}
+	if operation.Description != "" {
+		fmt.Fprintln(os.Stdout, "")
+		fmt.Fprintln(os.Stdout, operation.Description)
+	}
+	if len(queryParams) > 0 {
+		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
+		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		for _, param := range queryParams {
+			name := param.Name
+			if param.Required {
+				name = fmt.Sprintf("%v (required)", name)
+			} else if param.Deprecated {
+				name = fmt.Sprintf("%v (deprecated)", name)
+			}
+			fmt.Fprintf(w, "\t%v\t%v\n", name, param.Description)
+		}
+		w.Flush()
+	}
+	fmt.Fprintln(os.Stdout, "\nOptions:")
+	flag.Usage()
 }

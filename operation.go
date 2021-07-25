@@ -66,6 +66,17 @@ type Operation struct {
 	Deprecated  bool
 }
 
+// ParametersIn returns a list of parameters in the given location (query, path, header).
+func (op Operation) ParametersIn(in string) []openapi3.Parameter {
+	filteredParams := make([]openapi3.Parameter, 0, len(op.Parameters))
+	for _, param := range op.Parameters {
+		if param.In == in {
+			filteredParams = append(filteredParams, param)
+		}
+	}
+	return filteredParams
+}
+
 // NewOperationFromSpec creates a new operation from the loaded specification.
 func NewOperationFromSpec(method string, path string, params openapi3.Parameters, specOp openapi3.Operation) Operation {
 	op := Operation{
