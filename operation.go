@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"hash/adler32"
 	"net/http"
+	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/iancoleman/strcase"
@@ -75,6 +77,50 @@ func (op Operation) ParametersIn(in string) []openapi3.Parameter {
 		}
 	}
 	return filteredParams
+}
+
+// RealPath returns a path with the given path and query parameters included.
+func (op Operation) RealPath(pathValues []string, query string) (string, error) {
+	pathParams := op.ParametersIn("path")
+	nParams := len(pathParams)
+	nValues := len(pathValues)
+	if nParams > 0 && nParams > nValues {
+		return "", fmt.Errorf("path has %v params, but only %v values were given", nParams, nValues)
+	}
+	replace := make([]string, 0, len(pathParams)*2)
+	for i, param := range pathParams {
+		paramName := fmt.Sprintf("{%v}", param.Name)
+		replace = append(replace, paramName, pathValues[i])
+	}
+	r := strings.NewReplacer(replace...)
+	path := r.Replace(op.Path)
+	if query != "" {
+		err := op.ValidateQuery(query)
+		if err != nil {
+			return "", err
+		}
+		path = path + "?" + query
+	}
+
+	return path, nil
+}
+
+// ValidateQuery validates the given query string against the defined parameters.
+//
+// Confirms that the query string is valid and that the required parameters are present.
+// Allows the query string to have additional, non-defined parameters.
+func (op Operation) ValidateQuery(query string) error {
+	queryValues, err := url.ParseQuery(query)
+	if err != nil {
+		return fmt.Errorf("parse query: %w", err)
+	}
+	for _, param := range op.ParametersIn("query") {
+		if param.Required && queryValues.Get(param.Name) == "" {
+			return fmt.Errorf("missing required query parameter %q", param.Name)
+		}
+	}
+
+	return nil
 }
 
 // NewOperationFromSpec creates a new operation from the loaded specification.

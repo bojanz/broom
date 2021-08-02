@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	help  = flag.BoolP("help", "h", false, "Display this help text and exit")
-	query = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
+	help    = flag.BoolP("help", "h", false, "Display this help text and exit")
+	query   = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
+	verbose = flag.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
 )
 
 func main() {
@@ -41,7 +43,7 @@ func main() {
 	profileCfg, ok := cfg[profile]
 	if !ok {
 		fmt.Fprintln(os.Stderr, "Error: unknown profile", profile)
-		return
+		os.Exit(1)
 	}
 	operations, err := broom.LoadOperations(profileCfg.SpecFile)
 	if err != nil {
@@ -58,10 +60,45 @@ func main() {
 	operation, ok := operations.ByID(operationID)
 	if !ok {
 		fmt.Fprintln(os.Stderr, "Error: unknown operation", operationID)
+		os.Exit(1)
+	}
+	pathParams := operation.ParametersIn("path")
+	pathValues := flag.Args()[2:]
+	if *help || len(pathParams) > len(pathValues) {
+		operationUsage(operation, profile)
 		return
 	}
-	if *help {
-		operationUsage(operation, profile)
+	path, err := operation.RealPath(pathValues, *query)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+
+	token := profileCfg.Token
+	if profileCfg.TokenCmd != "" {
+		token, err = broom.RetrieveToken(profileCfg.TokenCmd)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+	}
+	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+	if token != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
+	}
+	result, err := broom.Execute(req, *verbose)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+
+	fmt.Fprint(os.Stdout, result.Output)
+	if result.StatusCode >= http.StatusBadRequest {
+		os.Exit(1)
 	}
 }
 
