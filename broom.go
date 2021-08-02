@@ -65,12 +65,14 @@ func PrettyJSON(json []byte) []byte {
 
 // RetrieveToken retrieves a token by running the given command.
 func RetrieveToken(tokenCmd string) (string, error) {
+	errBuf := &bytes.Buffer{}
 	cmd := exec.Command("sh", "-c", tokenCmd)
 	cmd.Env = os.Environ()
-	output, err := cmd.CombinedOutput()
+	cmd.Stderr = errBuf
+	output, err := cmd.Output()
 	if err != nil {
 		// The error is just a return code, which isn't useful.
-		return "", fmt.Errorf("retrieve token: %v", string(output))
+		return "", fmt.Errorf("retrieve token: %v", errBuf.String())
 	}
 	token := strings.TrimSpace(string(output))
 
