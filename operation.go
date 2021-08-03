@@ -56,6 +56,16 @@ func (ops Operations) Tags() []string {
 	return tagNames
 }
 
+// Parameter represents an operation parameter.
+type Parameter struct {
+	In          string
+	Name        string
+	Description string
+	Style       string
+	Deprecated  bool
+	Required    bool
+}
+
 // Operation represents an available operation.
 type Operation struct {
 	ID          string
@@ -64,13 +74,13 @@ type Operation struct {
 	Tag         string
 	Method      string
 	Path        string
-	Parameters  []openapi3.Parameter
+	Parameters  []Parameter
 	Deprecated  bool
 }
 
 // ParametersIn returns a list of parameters in the given location (query, path, header).
-func (op Operation) ParametersIn(in string) []openapi3.Parameter {
-	filteredParams := make([]openapi3.Parameter, 0, len(op.Parameters))
+func (op Operation) ParametersIn(in string) []Parameter {
+	filteredParams := make([]Parameter, 0, len(op.Parameters))
 	for _, param := range op.Parameters {
 		if param.In == in {
 			filteredParams = append(filteredParams, param)
@@ -123,39 +133,6 @@ func (op Operation) ValidateQuery(query string) error {
 	return nil
 }
 
-// NewOperationFromSpec creates a new operation from the loaded specification.
-func NewOperationFromSpec(method string, path string, params openapi3.Parameters, specOp openapi3.Operation) Operation {
-	op := Operation{
-		ID:          strcase.ToKebab(specOp.OperationID),
-		Summary:     specOp.Summary,
-		Description: specOp.Description,
-		Method:      method,
-		Path:        path,
-		Deprecated:  specOp.Deprecated,
-	}
-	// Make it possible to run operations without an ID.
-	if op.ID == "" {
-		// A hash like c5430c97 is better than nothing, though in the future we
-		// could try to generate a more user-friendly machine name from the path.
-		hash := adler32.New()
-		hash.Write([]byte(path))
-		op.ID = hex.EncodeToString(hash.Sum(nil))
-	}
-	if len(specOp.Tags) > 0 {
-		op.Tag = specOp.Tags[0]
-	}
-	// Parameters can be defined per-path or per-operation..
-	op.Parameters = make([]openapi3.Parameter, 0, len(params)+len(specOp.Parameters))
-	for _, param := range params {
-		op.Parameters = append(op.Parameters, *param.Value)
-	}
-	for _, param := range specOp.Parameters {
-		op.Parameters = append(op.Parameters, *param.Value)
-	}
-
-	return op
-}
-
 // LoadOperations loads available operations from the specified specification.
 func LoadOperations(filename string) (Operations, error) {
 	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
@@ -202,4 +179,49 @@ func LoadOperations(filename string) (Operations, error) {
 	}
 
 	return operations, nil
+}
+
+// NewOperationFromSpec creates a new operation from the loaded specification.
+func NewOperationFromSpec(method string, path string, params openapi3.Parameters, specOp openapi3.Operation) Operation {
+	op := Operation{
+		ID:          strcase.ToKebab(specOp.OperationID),
+		Summary:     specOp.Summary,
+		Description: specOp.Description,
+		Method:      method,
+		Path:        path,
+		Deprecated:  specOp.Deprecated,
+	}
+	// Make it possible to run operations without an ID.
+	if op.ID == "" {
+		// A hash like c5430c97 is better than nothing, though in the future we
+		// could try to generate a more user-friendly machine name from the path.
+		hash := adler32.New()
+		hash.Write([]byte(path))
+		op.ID = hex.EncodeToString(hash.Sum(nil))
+	}
+	if len(specOp.Tags) > 0 {
+		op.Tag = specOp.Tags[0]
+	}
+	// Parameters can be defined per-path or per-operation..
+	op.Parameters = make([]Parameter, 0, len(params)+len(specOp.Parameters))
+	for _, param := range params {
+		op.Parameters = append(op.Parameters, NewParameterFromSpec(*param.Value))
+	}
+	for _, param := range specOp.Parameters {
+		op.Parameters = append(op.Parameters, NewParameterFromSpec(*param.Value))
+	}
+
+	return op
+}
+
+// NewParameterFromSpec creates a new parameter from the loaded specification.
+func NewParameterFromSpec(specParam openapi3.Parameter) Parameter {
+	return Parameter{
+		In:          specParam.In,
+		Name:        specParam.Name,
+		Description: specParam.Description,
+		Style:       specParam.Style,
+		Deprecated:  specParam.Deprecated,
+		Required:    specParam.Required,
+	}
 }
