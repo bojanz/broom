@@ -8,7 +8,8 @@ JSON output is colored and formatted, authentication is handled.
 ## Install
 
 ```bash
-go get -u https://github.com/bojanz/broom
+go install github.com/bojanz/broom/cmd/broom@latest
+go install github.com/bojanz/broom/cmd/broom-init@latest
 ```
 or run `make` yourself inside the source directory, then copy the two binaries from bin/.
 

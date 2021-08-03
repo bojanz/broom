@@ -1,6 +1,7 @@
 package broom
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,7 +51,7 @@ func Execute(req *http.Request, verbose bool) (Result, error) {
 	return Result{resp.StatusCode, sb.String()}, nil
 }
 
-// Checks whether the given response is in JSON format.
+// IsJSON checks whether the given response is in JSON format.
 func IsJSON(resp *http.Response) bool {
 	contentType := resp.Header.Get("Content-Type")
 	// An imprecise check allows for both application/json

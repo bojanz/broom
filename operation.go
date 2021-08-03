@@ -48,7 +48,7 @@ func (ops Operations) Tags() []string {
 		tags[op.Tag] = struct{}{}
 	}
 	tagNames := make([]string, 0, len(tags))
-	for tagName, _ := range tags {
+	for tagName := range tags {
 		tagNames = append(tagNames, tagName)
 	}
 	sort.Strings(tagNames)
