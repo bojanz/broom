@@ -43,7 +43,7 @@ func Execute(req *http.Request, verbose bool) (Result, error) {
 		resp.Header.WriteSubset(&sb, nil)
 		sb.WriteByte('\n')
 	}
-	if IsJSON(resp) {
+	if IsJSON(resp.Header.Get("Content-Type")) {
 		body = PrettyJSON(body)
 	}
 	sb.Write(body)
@@ -51,12 +51,12 @@ func Execute(req *http.Request, verbose bool) (Result, error) {
 	return Result{resp.StatusCode, sb.String()}, nil
 }
 
-// IsJSON checks whether the given response is in JSON format.
-func IsJSON(resp *http.Response) bool {
-	contentType := resp.Header.Get("Content-Type")
-	// An imprecise check allows for both application/json
-	// and other mime types like JSON API or HAL.
-	return strings.Contains(contentType, "json")
+// IsJSON checks whether the given media type matches a JSON format.
+func IsJSON(mediaType string) bool {
+	// Needs to match not just application/json, but also variants
+	// such as application/vnd.api+json and application/hal+json,
+	// with or without a charset suffix.
+	return strings.Contains(mediaType, "json")
 }
 
 // PrettyJSON pretty-prints the given JSON.
