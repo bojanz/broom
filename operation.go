@@ -14,7 +14,7 @@ import (
 	"github.com/iancoleman/strcase"
 )
 
-// Operations represents all available operations.
+// Operations represents a list of operations.
 type Operations []Operation
 
 // ByID returns an operation with the given ID.
@@ -31,8 +31,8 @@ func (ops Operations) ByID(id string) (Operation, bool) {
 }
 
 // ByTag returns a list of operations for the given tag.
-func (ops Operations) ByTag(tag string) []Operation {
-	filteredOps := make([]Operation, 0, len(ops))
+func (ops Operations) ByTag(tag string) Operations {
+	filteredOps := make(Operations, 0, len(ops))
 	for _, op := range ops {
 		if op.Tag == tag {
 			filteredOps = append(filteredOps, op)
