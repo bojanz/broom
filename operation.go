@@ -94,8 +94,8 @@ func (op Operation) RealPath(pathValues []string, query string) (string, error) 
 	pathParams := op.ParametersIn("path")
 	nParams := len(pathParams)
 	nValues := len(pathValues)
-	if nParams > 0 && nParams > nValues {
-		return "", fmt.Errorf("path has %v params, but only %v values were given", nParams, nValues)
+	if nParams > nValues {
+		return "", fmt.Errorf("too few path parameters: got %v, want %v", nValues, nParams)
 	}
 	replace := make([]string, 0, len(pathParams)*2)
 	for i, param := range pathParams {
