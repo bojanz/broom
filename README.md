@@ -39,11 +39,11 @@ broom api list-orders -q "filter[owner]=my-user&sort=-id"
 # Required parameters are passed directly.
 broom api get-order 01FAZ7A1H11FW16WPQZP879YX3
 
-# Request body parameters are passed via -d.
+# Request body parameters are passed via -b.
 # The query string is auto-mapped to JSON if the service requires it.
-broom api create-user -d "username=my-user&password=123456"
+broom api create-user -b "username=my-user&password=123456"
 
-# Omitting -d will open a terminal UI for providing body parameters.
+# Omitting -b will open a terminal UI for providing body parameters.
 broom api create-user
 
 # Get the list of all arguments and parameters via --help.

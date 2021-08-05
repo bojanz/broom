@@ -62,6 +62,7 @@ type Parameter struct {
 	Name        string
 	Description string
 	Style       string
+	Type        string
 	Deprecated  bool
 	Required    bool
 }
@@ -75,10 +76,11 @@ type Operation struct {
 	Method      string
 	Path        string
 	Parameters  []Parameter
+	BodyFormat  string
 	Deprecated  bool
 }
 
-// ParametersIn returns a list of parameters in the given location (query, path, header).
+// ParametersIn returns a list of parameters in the given location (query, path, body).
 func (op Operation) ParametersIn(in string) []Parameter {
 	filteredParams := make([]Parameter, 0, len(op.Parameters))
 	for _, param := range op.Parameters {
@@ -210,6 +212,29 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 	for _, param := range specOp.Parameters {
 		op.Parameters = append(op.Parameters, NewParameterFromSpec(*param.Value))
 	}
+	if specOp.RequestBody != nil {
+		for format, mediaType := range specOp.RequestBody.Value.Content {
+			op.BodyFormat = format
+			for name, schema := range mediaType.Schema.Value.Properties {
+				required := false
+				for _, requiredName := range mediaType.Schema.Value.Required {
+					if requiredName == name {
+						required = true
+					}
+				}
+
+				op.Parameters = append(op.Parameters, Parameter{
+					In:          "body",
+					Name:        name,
+					Description: schema.Value.Description,
+					Type:        schema.Value.Type,
+					Deprecated:  schema.Value.Deprecated,
+					Required:    required,
+				})
+			}
+			break
+		}
+	}
 
 	return op
 }
@@ -221,6 +246,7 @@ func NewParameterFromSpec(specParam openapi3.Parameter) Parameter {
 		Name:        specParam.Name,
 		Description: specParam.Description,
 		Style:       specParam.Style,
+		Type:        specParam.Schema.Value.Type,
 		Deprecated:  specParam.Deprecated,
 		Required:    specParam.Required,
 	}

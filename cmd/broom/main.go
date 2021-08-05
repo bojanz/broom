@@ -15,6 +15,7 @@ import (
 
 var (
 	help    = flag.BoolP("help", "h", false, "Display this help text and exit")
+	body    = flag.StringP("body", "b", "", "Body string, containing one or more body parameters")
 	query   = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
 	verbose = flag.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
 )
@@ -90,6 +91,9 @@ func main() {
 	if token != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
 	}
+	if operation.BodyFormat != "" {
+		req.Header.Add("Content-Type", operation.BodyFormat)
+	}
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
@@ -148,6 +152,7 @@ func operationUsage(operation broom.Operation, profile string) {
 		summary = fmt.Sprintf("%v (deprecated)", summary)
 	}
 	queryParams := operation.ParametersIn("query")
+	bodyParams := operation.ParametersIn("body")
 
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
 	if summary != "" {
@@ -162,6 +167,20 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range queryParams {
+			name := param.Name
+			if param.Required {
+				name = fmt.Sprintf("%v (required)", name)
+			} else if param.Deprecated {
+				name = fmt.Sprintf("%v (deprecated)", name)
+			}
+			fmt.Fprintf(w, "\t%v\t%v\n", name, param.Description)
+		}
+		w.Flush()
+	}
+	if len(bodyParams) > 0 {
+		fmt.Fprintln(os.Stdout, "\nBody parameters:")
+		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		for _, param := range bodyParams {
 			name := param.Name
 			if param.Required {
 				name = fmt.Sprintf("%v (required)", name)
