@@ -3,7 +3,7 @@ module github.com/bojanz/broom
 go 1.16
 
 require (
-	github.com/getkin/kin-openapi v0.66.0
+	github.com/getkin/kin-openapi v0.69.0
 	github.com/google/go-cmp v0.5.6
 	github.com/iancoleman/strcase v0.2.0
 	github.com/spf13/pflag v1.0.5
