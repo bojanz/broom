@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -74,6 +75,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
+	bodyBytes, err := operation.ProcessBody(*body)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
 
 	token := profileCfg.Token
 	if profileCfg.TokenCmd != "" {
@@ -83,7 +89,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, nil)
+	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)

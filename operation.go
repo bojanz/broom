@@ -3,11 +3,13 @@ package broom
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"hash/adler32"
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -59,6 +61,16 @@ func (ops Operations) Tags() []string {
 // Parameters represents a list of parameters.
 type Parameters []Parameter
 
+// ByName returns a parameter with the given name.
+func (ps Parameters) ByName(name string) (Parameter, bool) {
+	for _, p := range ps {
+		if p.Name == name {
+			return p, true
+		}
+	}
+	return Parameter{}, false
+}
+
 // Validate confirms the presence of required parameters in the given values.
 func (ps Parameters) Validate(values url.Values) error {
 	for _, p := range ps {
@@ -78,6 +90,35 @@ type Parameter struct {
 	Type        string
 	Deprecated  bool
 	Required    bool
+}
+
+// CastString casts the given string to the parameter type.
+func (p Parameter) CastString(str string) (interface{}, error) {
+	switch p.Type {
+	case "array":
+		// @todo Support non-string arrays.
+		return strings.Split(str, ","), nil
+	case "boolean":
+		v, err := strconv.ParseBool(str)
+		if err != nil {
+			return false, fmt.Errorf("%q is not a valid boolean", str)
+		}
+		return v, nil
+	case "integer":
+		v, err := strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			return false, fmt.Errorf("%q is not a valid integer", str)
+		}
+		return v, nil
+	case "number":
+		v, err := strconv.ParseFloat(str, 64)
+		if err != nil {
+			return false, fmt.Errorf("%q is not a valid decimal number", str)
+		}
+		return v, nil
+	}
+
+	return str, nil
 }
 
 // Operation represents an available operation.
@@ -102,6 +143,41 @@ func (op Operation) ParametersIn(in string) Parameters {
 		}
 	}
 	return filteredParams
+}
+
+// ProcessBody converts the given body string into a byte array suitable for sending.
+func (op Operation) ProcessBody(body string) ([]byte, error) {
+	values, err := url.ParseQuery(body)
+	if err != nil {
+		return nil, fmt.Errorf("parse body: %w", err)
+	}
+	bodyParams := op.ParametersIn("body")
+	if err := bodyParams.Validate(values); err != nil {
+		return nil, err
+	}
+
+	if IsJSON(op.BodyFormat) {
+		jsonValues := make(map[string]interface{}, len(values))
+		for name := range values {
+			value := values.Get(name)
+			// Allow defined parameters to cast the string.
+			if bodyParam, ok := bodyParams.ByName(name); ok {
+				jsonValues[name], err = bodyParam.CastString(value)
+				if err != nil {
+					return nil, fmt.Errorf("could not process %v: %v", name, err)
+				}
+			}
+			// Pass through non-defined parameters as strings.
+			if _, ok := jsonValues[name]; !ok {
+				jsonValues[name] = value
+			}
+		}
+		return json.Marshal(jsonValues)
+	} else if op.BodyFormat == "application/x-www-form-urlencoded" {
+		return []byte(values.Encode()), nil
+	} else {
+		return nil, fmt.Errorf("unsupported body format %v", op.BodyFormat)
+	}
 }
 
 // RealPath returns a path with the given path and query parameters included.

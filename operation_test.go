@@ -75,6 +75,35 @@ func TestOperations_Tags(t *testing.T) {
 	}
 }
 
+func TestParameters_ByName(t *testing.T) {
+	parameters := broom.Parameters{
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+		},
+	}
+
+	p1, ok := parameters.ByName("billing_country")
+	if p1.Name != "billing_country" || ok != true {
+		t.Errorf("got %v, %v want billing_country, true", p1.Name, ok)
+	}
+
+	p2, ok := parameters.ByName("sort")
+	if p2.Name != "sort" || ok != true {
+		t.Errorf("got %v, %v want sort, true", p2.Name, ok)
+	}
+
+	p3, ok := parameters.ByName("billing_region")
+	if p3.Name != "" || ok != false {
+		t.Errorf(`got %v, %v want "", false`, p3.Name, ok)
+	}
+}
+
 func TestParameters_Validate(t *testing.T) {
 	parameters := broom.Parameters{
 		broom.Parameter{
@@ -158,6 +187,139 @@ func TestOperation_ParametersIn(t *testing.T) {
 	wantParams = broom.Parameters{}
 	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
 		t.Errorf("body parameter mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestOperation_ProcessBody(t *testing.T) {
+	// Unsupported format.
+	operation := broom.Operation{
+		Parameters: broom.Parameters{
+			broom.Parameter{
+				In:       "body",
+				Name:     "username",
+				Type:     "string",
+				Required: true,
+			},
+		},
+		BodyFormat: "application/xml",
+	}
+	b, err := operation.ProcessBody("username=jsmith")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != "unsupported body format application/xml" {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Missing required parameter.
+	b, err = operation.ProcessBody("")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required body parameter "username"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Form data (application/x-www-form-urlencoded).
+	operation = broom.Operation{
+		Parameters: broom.Parameters{
+			broom.Parameter{
+				In:   "body",
+				Name: "username",
+				Type: "string",
+			},
+		},
+		BodyFormat: "application/x-www-form-urlencoded",
+	}
+	// Non-defined parameters are expected to be passed through.
+	b, err = operation.ProcessBody("email=js@domain&username=jsmith")
+	got := string(b)
+	want := "email=js%40domain&username=jsmith"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// JSON data (application/json).
+	operation = broom.Operation{
+		Parameters: broom.Parameters{
+			// Parameters without a type should remain strings.
+			broom.Parameter{
+				In:   "body",
+				Name: "username",
+			},
+			broom.Parameter{
+				In:   "body",
+				Name: "roles",
+				Type: "array",
+			},
+			broom.Parameter{
+				In:   "body",
+				Name: "storage",
+				Type: "integer",
+			},
+			broom.Parameter{
+				In:   "body",
+				Name: "vcpu",
+				Type: "number",
+			},
+			broom.Parameter{
+				In:   "body",
+				Name: "status",
+				Type: "boolean",
+			},
+		},
+		BodyFormat: "application/json",
+	}
+	// Invalid boolean.
+	b, err = operation.ProcessBody("status=invalid")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `could not process status: "invalid" is not a valid boolean` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Invalid integer.
+	b, err = operation.ProcessBody("storage=invalid")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `could not process storage: "invalid" is not a valid integer` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Invalid number.
+	b, err = operation.ProcessBody("vcpu=1,7")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `could not process vcpu: "1,7" is not a valid decimal number` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Valid data.
+	b, err = operation.ProcessBody("email=js@domain&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	got = string(b)
+	// Note: keys are always alphabetical, due to how encoding/json treats maps.
+	want = `{"email":"js@domain","roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
 	}
 }
 
