@@ -56,6 +56,19 @@ func (ops Operations) Tags() []string {
 	return tagNames
 }
 
+// Parameters represents a list of parameters.
+type Parameters []Parameter
+
+// Validate confirms the presence of required parameters in the given values.
+func (ps Parameters) Validate(values url.Values) error {
+	for _, p := range ps {
+		if p.Required && values.Get(p.Name) == "" {
+			return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
+		}
+	}
+	return nil
+}
+
 // Parameter represents an operation parameter.
 type Parameter struct {
 	In          string
@@ -75,14 +88,14 @@ type Operation struct {
 	Tag         string
 	Method      string
 	Path        string
-	Parameters  []Parameter
+	Parameters  Parameters
 	BodyFormat  string
 	Deprecated  bool
 }
 
 // ParametersIn returns a list of parameters in the given location (query, path, body).
-func (op Operation) ParametersIn(in string) []Parameter {
-	filteredParams := make([]Parameter, 0, len(op.Parameters))
+func (op Operation) ParametersIn(in string) Parameters {
+	filteredParams := make(Parameters, 0, len(op.Parameters))
 	for _, param := range op.Parameters {
 		if param.In == in {
 			filteredParams = append(filteredParams, param)
@@ -107,32 +120,18 @@ func (op Operation) RealPath(pathValues []string, query string) (string, error) 
 	r := strings.NewReplacer(replace...)
 	path := r.Replace(op.Path)
 	if query != "" {
-		err := op.ValidateQuery(query)
+		queryValues, err := url.ParseQuery(query)
 		if err != nil {
+			return "", fmt.Errorf("parse query: %w", err)
+		}
+		queryParams := op.ParametersIn("query")
+		if err := queryParams.Validate(queryValues); err != nil {
 			return "", err
 		}
-		path = path + "?" + query
+		path = path + "?" + queryValues.Encode()
 	}
 
 	return path, nil
-}
-
-// ValidateQuery validates the given query string against the defined parameters.
-//
-// Confirms that the query string is valid and that the required parameters are present.
-// Allows the query string to have additional, non-defined parameters.
-func (op Operation) ValidateQuery(query string) error {
-	queryValues, err := url.ParseQuery(query)
-	if err != nil {
-		return fmt.Errorf("parse query: %w", err)
-	}
-	for _, param := range op.ParametersIn("query") {
-		if param.Required && queryValues.Get(param.Name) == "" {
-			return fmt.Errorf("missing required query parameter %q", param.Name)
-		}
-	}
-
-	return nil
 }
 
 // LoadOperations loads available operations from the specified specification.
@@ -205,7 +204,7 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 		op.Tag = specOp.Tags[0]
 	}
 	// Parameters can be defined per-path or per-operation..
-	op.Parameters = make([]Parameter, 0, len(params)+len(specOp.Parameters))
+	op.Parameters = make(Parameters, 0, len(params)+len(specOp.Parameters))
 	for _, param := range params {
 		op.Parameters = append(op.Parameters, NewParameterFromSpec(*param.Value))
 	}

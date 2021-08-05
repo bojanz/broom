@@ -1,6 +1,7 @@
 package broom_test
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/bojanz/broom"
@@ -74,9 +75,45 @@ func TestOperations_Tags(t *testing.T) {
 	}
 }
 
+func TestParameters_Validate(t *testing.T) {
+	parameters := broom.Parameters{
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+		},
+	}
+
+	// Required parameter missing.
+	err := parameters.Validate(url.Values{})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required query parameter "billing_country"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Required parameter provided but empty
+	err = parameters.Validate(url.Values{"billing_country": {""}})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required query parameter "billing_country"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Provided required parameter.
+	err = parameters.Validate(url.Values{"billing_country": {"US"}})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+}
+
 func TestOperation_ParametersIn(t *testing.T) {
 	operation := broom.Operation{
-		Parameters: []broom.Parameter{
+		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "path",
 				Name: "userId",
@@ -93,7 +130,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 	}
 
 	gotParams := operation.ParametersIn("path")
-	wantParams := []broom.Parameter{
+	wantParams := broom.Parameters{
 		broom.Parameter{
 			In:   "path",
 			Name: "userId",
@@ -107,7 +144,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 	}
 
 	gotParams = operation.ParametersIn("query")
-	wantParams = []broom.Parameter{
+	wantParams = broom.Parameters{
 		broom.Parameter{
 			In:   "query",
 			Name: "page",
@@ -118,7 +155,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 	}
 
 	gotParams = operation.ParametersIn("body")
-	wantParams = []broom.Parameter{}
+	wantParams = broom.Parameters{}
 	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
 		t.Errorf("body parameter mismatch (-want +got):\n%s", diff)
 	}
@@ -149,7 +186,7 @@ func TestOperation_RealPath(t *testing.T) {
 	// Missing path parameter.
 	operation = broom.Operation{
 		Path: "/users/{userId}",
-		Parameters: []broom.Parameter{
+		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "path",
 				Name: "userId",
@@ -169,7 +206,7 @@ func TestOperation_RealPath(t *testing.T) {
 	// Provided path parameters.
 	operation = broom.Operation{
 		Path: "/users/{userId}/orders/{orderId}",
-		Parameters: []broom.Parameter{
+		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "path",
 				Name: "userId",
@@ -191,7 +228,7 @@ func TestOperation_RealPath(t *testing.T) {
 	// Path and query parameters.
 	operation = broom.Operation{
 		Path: "/users/{userId}/orders",
-		Parameters: []broom.Parameter{
+		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "path",
 				Name: "userId",
@@ -221,6 +258,15 @@ func TestOperation_RealPath(t *testing.T) {
 	path, err = operation.RealPath([]string{"test-user"}, "billing_country=US&billing_region=NY&sort=-updated_at")
 	if path != "/users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at" {
 		t.Errorf("got %v, want /users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at", path)
+	}
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Confirm that query parameters are escaped.
+	path, err = operation.RealPath([]string{"test-user"}, "billing_country=U S")
+	if path != "/users/test-user/orders?billing_country=U+S" {
+		t.Errorf("got %v, want /users/test-user/orders?billing_country=U+S", path)
 	}
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
