@@ -191,8 +191,18 @@ func TestOperation_ParametersIn(t *testing.T) {
 }
 
 func TestOperation_ProcessBody(t *testing.T) {
+	// Empty format.
+	operation := broom.Operation{}
+	b, err := operation.ProcessBody("username=jsmith")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
 	// Unsupported format.
-	operation := broom.Operation{
+	operation = broom.Operation{
 		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:       "body",
@@ -203,7 +213,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 		},
 		BodyFormat: "application/xml",
 	}
-	b, err := operation.ProcessBody("username=jsmith")
+	b, err = operation.ProcessBody("username=jsmith")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}

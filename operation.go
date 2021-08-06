@@ -147,6 +147,10 @@ func (op Operation) ParametersIn(in string) Parameters {
 
 // ProcessBody converts the given body string into a byte array suitable for sending.
 func (op Operation) ProcessBody(body string) ([]byte, error) {
+	if op.BodyFormat == "" {
+		// Operation does not support specifying a body (e.g. GET/DELETE).
+		return nil, nil
+	}
 	values, err := url.ParseQuery(body)
 	if err != nil {
 		return nil, fmt.Errorf("parse body: %w", err)
