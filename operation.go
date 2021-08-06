@@ -71,11 +71,12 @@ func (ps Parameters) ByName(name string) (Parameter, bool) {
 	return Parameter{}, false
 }
 
-// Validate confirms the presence of required parameters in the given values.
+// Validate validates each parameter against the given values.
 func (ps Parameters) Validate(values url.Values) error {
 	for _, p := range ps {
-		if p.Required && values.Get(p.Name) == "" {
-			return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
+		value := values.Get(p.Name)
+		if err := p.Validate(value); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -88,6 +89,7 @@ type Parameter struct {
 	Description string
 	Style       string
 	Type        string
+	Enum        []string
 	Deprecated  bool
 	Required    bool
 }
@@ -119,6 +121,22 @@ func (p Parameter) CastString(str string) (interface{}, error) {
 	}
 
 	return str, nil
+}
+
+// Validate validates the parameter against the given value.
+func (p Parameter) Validate(value string) error {
+	if value == "" && p.Required {
+		return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
+	}
+	// A strict check would not avoid empty strings, requiring them to be
+	// declared in the enum as well, but since many specs don't do that,
+	// the check here is loosened to prevent user frustration.
+	if value != "" && len(p.Enum) > 0 && !contains(p.Enum, value) {
+		formattedEnum := strings.Join(p.Enum, ", ")
+		return fmt.Errorf("invalid value for %v parameter %q (allowed values: %v)", p.In, p.Name, formattedEnum)
+	}
+
+	return nil
 }
 
 // Operation represents an available operation.
@@ -315,6 +333,7 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 					Name:        name,
 					Description: schema.Value.Description,
 					Type:        schema.Value.Type,
+					Enum:        castEnum(schema.Value.Enum),
 					Deprecated:  schema.Value.Deprecated,
 					Required:    required,
 				})
@@ -334,7 +353,17 @@ func NewParameterFromSpec(specParam openapi3.Parameter) Parameter {
 		Description: specParam.Description,
 		Style:       specParam.Style,
 		Type:        specParam.Schema.Value.Type,
+		Enum:        castEnum(specParam.Schema.Value.Enum),
 		Deprecated:  specParam.Deprecated,
 		Required:    specParam.Required,
 	}
+}
+
+// castEnum converts enum values from interface{} to string.
+func castEnum(enum []interface{}) []string {
+	stringEnum := make([]string, 0, len(enum))
+	for _, v := range enum {
+		stringEnum = append(stringEnum, fmt.Sprintf("%v", v))
+	}
+	return stringEnum
 }

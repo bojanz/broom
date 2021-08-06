@@ -79,3 +79,13 @@ func RetrieveToken(tokenCmd string) (string, error) {
 
 	return token, nil
 }
+
+// contains returns whether slice a contains x.
+func contains(a []string, x string) bool {
+	for _, v := range a {
+		if v == x {
+			return true
+		}
+	}
+	return false
+}

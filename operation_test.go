@@ -114,6 +114,7 @@ func TestParameters_Validate(t *testing.T) {
 		broom.Parameter{
 			In:   "query",
 			Name: "sort",
+			Enum: []string{"billing_country", "user_id"},
 		},
 	}
 
@@ -136,6 +137,14 @@ func TestParameters_Validate(t *testing.T) {
 	// Provided required parameter.
 	err = parameters.Validate(url.Values{"billing_country": {"US"}})
 	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Enum validation.
+	err = parameters.Validate(url.Values{"billing_country": {"US"}, "sort": {"invalid"}})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `invalid value for query parameter "sort" (allowed values: billing_country, user_id)` {
 		t.Errorf("unexpected error %v", err)
 	}
 }
