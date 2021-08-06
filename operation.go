@@ -294,7 +294,15 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 	if specOp.RequestBody != nil {
 		for format, mediaType := range specOp.RequestBody.Value.Content {
 			op.BodyFormat = format
-			for name, schema := range mediaType.Schema.Value.Properties {
+			// Sort the property names to ensure a consistent order.
+			names := make([]string, 0, len(mediaType.Schema.Value.Properties))
+			for name := range mediaType.Schema.Value.Properties {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+
+			for _, name := range names {
+				schema := mediaType.Schema.Value.Properties[name]
 				required := false
 				for _, requiredName := range mediaType.Schema.Value.Required {
 					if requiredName == name {
