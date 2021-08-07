@@ -94,6 +94,11 @@ type Parameter struct {
 	Required    bool
 }
 
+// Label returns a human-readable parameter label.
+func (p Parameter) Label() string {
+	return strings.Title(strcase.ToDelimited(p.Name, ' '))
+}
+
 // CastString casts the given string to the parameter type.
 func (p Parameter) CastString(str string) (interface{}, error) {
 	switch p.Type {
@@ -152,6 +157,12 @@ type Operation struct {
 	Deprecated  bool
 }
 
+// HasBody returns whether the operation has a body.
+func (op Operation) HasBody() bool {
+	// Body params are keyed by format in the spec, so there's no need to check both.
+	return op.BodyFormat != ""
+}
+
 // ParametersIn returns a list of parameters in the given location (query, path, body).
 func (op Operation) ParametersIn(in string) Parameters {
 	filteredParams := make(Parameters, 0, len(op.Parameters))
@@ -165,7 +176,7 @@ func (op Operation) ParametersIn(in string) Parameters {
 
 // ProcessBody converts the given body string into a byte array suitable for sending.
 func (op Operation) ProcessBody(body string) ([]byte, error) {
-	if op.BodyFormat == "" {
+	if !op.HasBody() {
 		// Operation does not support specifying a body (e.g. GET/DELETE).
 		return nil, nil
 	}

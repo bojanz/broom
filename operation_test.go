@@ -149,6 +149,28 @@ func TestParameters_Validate(t *testing.T) {
 	}
 }
 
+func TestParameter_Label(t *testing.T) {
+	// Conversion from snake_case.
+	param := broom.Parameter{
+		Name: "first_name",
+	}
+	got := param.Label()
+	want := "First Name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	// Conversion from camelCase.
+	param = broom.Parameter{
+		Name: "lastName",
+	}
+	got = param.Label()
+	want = "Last Name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestOperation_ParametersIn(t *testing.T) {
 	operation := broom.Operation{
 		Parameters: broom.Parameters{

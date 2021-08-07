@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/rivo/tview"
 	flag "github.com/spf13/pflag"
 
 	"github.com/bojanz/broom"
@@ -74,6 +77,15 @@ func main() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
+	}
+	// The operation has a body, but no body string was provided.
+	// Launch the terminal UI to collect values.
+	if *body == "" && operation.HasBody() {
+		var canceled bool
+		*body, canceled = bodyForm(operation)
+		if canceled {
+			os.Exit(0)
+		}
 	}
 	bodyBytes, err := operation.ProcessBody(*body)
 	if err != nil {
@@ -199,4 +211,58 @@ func operationUsage(operation broom.Operation, profile string) {
 	}
 	fmt.Fprintln(os.Stdout, "\nOptions:")
 	flag.Usage()
+}
+
+// bodyForm renders a form for entering body parameters.
+func bodyForm(operation broom.Operation) (string, bool) {
+	values := url.Values{}
+	canceled := false
+	app := tview.NewApplication()
+	form := tview.NewForm()
+	cancelFunc := func() {
+		values = url.Values{}
+		canceled = true
+		app.Stop()
+	}
+	form.SetCancelFunc(cancelFunc)
+	form.SetBorder(true)
+	form.SetTitle(operation.Summary)
+	form.SetTitleAlign(tview.AlignLeft)
+
+	bodyParams := operation.ParametersIn("body")
+	for _, param := range bodyParams {
+		paramName := param.Name
+		paramLabel := param.Label()
+		if param.Required {
+			paramLabel = fmt.Sprintf("%v*", paramLabel)
+		}
+
+		if param.Type == "boolean" {
+			form.AddCheckbox(paramLabel, false, func(checked bool) {
+				values.Set(paramName, strconv.FormatBool(checked))
+			})
+		} else if len(param.Enum) > 0 {
+			form.AddDropDown(paramLabel, param.Enum, 0, func(option string, optionIndex int) {
+				values.Set(paramName, option)
+			})
+		} else {
+			form.AddInputField(paramLabel, "", 40, nil, func(text string) {
+				values.Set(paramName, text)
+			})
+		}
+	}
+	form.AddButton("Submit", func() {
+		// Allow submit only if the input is valid.
+		err := bodyParams.Validate(values)
+		if err == nil {
+			app.Stop()
+		}
+	})
+	form.AddButton("Cancel", cancelFunc)
+
+	if err := app.SetRoot(form, true).EnableMouse(true).Run(); err != nil {
+		panic(err)
+	}
+
+	return values.Encode(), canceled
 }
