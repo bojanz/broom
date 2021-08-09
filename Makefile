@@ -8,7 +8,7 @@ build: clean
 clean:
 	rm -rf ./bin
 
-lint: lint-gofmt lint-gomod lint-golint lint-govet
+lint: lint-gofmt lint-gomod lint-govet lint-staticcheck
 
 lint-gofmt:
 ifneq ($(shell gofmt -l . | wc -l),0)
@@ -21,15 +21,15 @@ ifneq ($(shell go mod tidy -v 2>/dev/stdout | tee /dev/stderr | grep -c 'unused 
 	@false
 endif
 
-lint-golint:
-	golint ./...
-
 lint-govet:
 	go vet ./...
+
+lint-staticcheck:
+	staticcheck ./...
 
 test:
 	go clean -testcache
 	go test $(FLAGS) ./...
 
 .DEFAULT_GOAL := build
-.PHONY: build clean lint lint-gofmt lint-gomod lint-golint lint-govet test
+.PHONY: build clean lint lint-gofmt lint-gomod lint-govet lint-staticcheck test

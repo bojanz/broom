@@ -31,7 +31,7 @@ Examples:
 Options:`
 
 var (
-	help      = flag.BoolP("help", "h", false, "Display this help text and exit")
+	_         = flag.BoolP("help", "h", false, "Display this help text and exit")
 	serverURL = flag.String("server-url", "", "Server URL. Overrides the one from the specification file")
 	token     = flag.String("token", "", "Access token. Used to authorize every request")
 	tokenCmd  = flag.String("token-cmd", "", "Access token command. Executed on every request to retrieve a token")
