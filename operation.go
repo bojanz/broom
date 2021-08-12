@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Bojan Zivanovic and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package broom
 
 import (
