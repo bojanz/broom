@@ -104,30 +104,35 @@ func (p Parameter) Label() string {
 
 // CastString casts the given string to the parameter type.
 func (p Parameter) CastString(str string) (interface{}, error) {
-	switch p.Type {
-	case "array":
-		// @todo Support non-string arrays.
-		return strings.Split(str, ","), nil
-	case "boolean":
-		v, err := strconv.ParseBool(str)
-		if err != nil {
-			return false, fmt.Errorf("%q is not a valid boolean", str)
+	if strings.HasPrefix(p.Type, "[]") {
+		strs := strings.Split(str, ",")
+		vs := make([]interface{}, 0, len(strs))
+		for _, s := range strs {
+			v, err := parseStr(s, p.Type[2:])
+			if err != nil {
+				return nil, fmt.Errorf("%q is not a valid %v", s, p.Type[2:])
+			}
+			vs = append(vs, v)
 		}
-		return v, nil
-	case "integer":
-		v, err := strconv.ParseInt(str, 10, 64)
+		return vs, nil
+	} else {
+		v, err := parseStr(str, p.Type)
 		if err != nil {
-			return false, fmt.Errorf("%q is not a valid integer", str)
-		}
-		return v, nil
-	case "number":
-		v, err := strconv.ParseFloat(str, 64)
-		if err != nil {
-			return false, fmt.Errorf("%q is not a valid decimal number", str)
+			return nil, fmt.Errorf("%q is not a valid %v", str, p.Type)
 		}
 		return v, nil
 	}
+}
 
+// parseStr invokes the strconv parse function for the given type.
+func parseStr(str string, newType string) (interface{}, error) {
+	if newType == "boolean" {
+		return strconv.ParseBool(str)
+	} else if newType == "integer" {
+		return strconv.ParseInt(str, 10, 64)
+	} else if newType == "number" {
+		return strconv.ParseFloat(str, 64)
+	}
 	return str, nil
 }
 
@@ -346,7 +351,7 @@ func NewOperationFromSpec(method string, path string, params openapi3.Parameters
 					In:          "body",
 					Name:        name,
 					Description: schema.Value.Description,
-					Type:        schema.Value.Type,
+					Type:        getSchemaType(*schema.Value),
 					Enum:        castEnum(schema.Value.Enum),
 					Deprecated:  schema.Value.Deprecated,
 					Required:    required,
@@ -366,11 +371,21 @@ func NewParameterFromSpec(specParam openapi3.Parameter) Parameter {
 		Name:        specParam.Name,
 		Description: specParam.Description,
 		Style:       specParam.Style,
-		Type:        specParam.Schema.Value.Type,
+		Type:        getSchemaType(*specParam.Schema.Value),
 		Enum:        castEnum(specParam.Schema.Value.Enum),
 		Deprecated:  specParam.Deprecated,
 		Required:    specParam.Required,
 	}
+}
+
+// getSchemaType retrieves the type of the given schema.
+func getSchemaType(schema openapi3.Schema) string {
+	schemaType := schema.Type
+	// CastString() needs to know the underlying type (array -> []string).
+	if schemaType == "array" {
+		schemaType = fmt.Sprintf("[]%v", schema.Items.Value.Type)
+	}
+	return schemaType
 }
 
 // castEnum converts enum values from interface{} to string.

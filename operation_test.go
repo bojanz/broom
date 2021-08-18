@@ -301,7 +301,12 @@ func TestOperation_ProcessBody(t *testing.T) {
 			broom.Parameter{
 				In:   "body",
 				Name: "roles",
-				Type: "array",
+				Type: "[]string",
+			},
+			broom.Parameter{
+				In:   "body",
+				Name: "lucky_numbers",
+				Type: "[]integer",
 			},
 			broom.Parameter{
 				In:   "body",
@@ -333,13 +338,24 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid integer.
-	b, err = operation.ProcessBody("storage=invalid")
+	b, err = operation.ProcessBody("storage=3.2")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
 	if err == nil {
 		t.Error("expected error, got nil")
-	} else if err.Error() != `could not process storage: "invalid" is not a valid integer` {
+	} else if err.Error() != `could not process storage: "3.2" is not a valid integer` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Invalid integer in an array.
+	b, err = operation.ProcessBody("lucky_numbers=4,eight,15")
+	if len(b) != 0 {
+		t.Errorf("expected an empty body, got %v", string(b))
+	}
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `could not process lucky_numbers: "eight" is not a valid integer` {
 		t.Errorf("unexpected error %v", err)
 	}
 
@@ -350,15 +366,15 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 	if err == nil {
 		t.Error("expected error, got nil")
-	} else if err.Error() != `could not process vcpu: "1,7" is not a valid decimal number` {
+	} else if err.Error() != `could not process vcpu: "1,7" is not a valid number` {
 		t.Errorf("unexpected error %v", err)
 	}
 
 	// Valid data.
-	b, err = operation.ProcessBody("email=js@domain&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	b, err = operation.ProcessBody("email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
 	got = string(b)
 	// Note: keys are always alphabetical, due to how encoding/json treats maps.
-	want = `{"email":"js@domain","roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
+	want = `{"email":"js@domain","lucky_numbers":[4,8,15,16,23,42],"roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
 	if got != want {
 		t.Errorf("got %v, want %v", got, want)
 	}
