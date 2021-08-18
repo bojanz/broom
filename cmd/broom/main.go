@@ -14,6 +14,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/iancoleman/strcase"
 	"github.com/rivo/tview"
 	flag "github.com/spf13/pflag"
 
@@ -166,7 +167,7 @@ func operationUsage(operation broom.Operation, profile string) {
 	sb.WriteString(operation.ID)
 	for _, param := range operation.ParametersIn("path") {
 		sb.WriteString(" ")
-		sb.WriteString(strings.ToUpper(param.Name))
+		sb.WriteString(strcase.ToScreamingSnake(param.Name))
 	}
 	summary := operation.Summary
 	if summary != "" && operation.Deprecated {
