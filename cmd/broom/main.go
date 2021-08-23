@@ -25,6 +25,7 @@ var (
 	help    = flag.BoolP("help", "h", false, "Display this help text and exit")
 	body    = flag.StringP("body", "b", "", "Body string, containing one or more body parameters")
 	query   = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
+	token   = flag.StringP("token", "t", "", "Access token. Overrides the one from the profile")
 	verbose = flag.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
 )
 
@@ -96,25 +97,28 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-
-	token := profileCfg.Token
-	if profileCfg.TokenCmd != "" {
-		token, err = broom.RetrieveToken(profileCfg.TokenCmd)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error:", err)
-			os.Exit(1)
+	if *token == "" {
+		// No access token specified, take it from the profile.
+		*token = profileCfg.Token
+		if profileCfg.TokenCmd != "" {
+			*token, err = broom.RetrieveToken(profileCfg.TokenCmd)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err)
+				os.Exit(1)
+			}
 		}
 	}
+
 	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	if token != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
-	}
-	if operation.BodyFormat != "" {
+	if operation.HasBody() {
 		req.Header.Add("Content-Type", operation.BodyFormat)
+	}
+	if *token != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", *token))
 	}
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {
