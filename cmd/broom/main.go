@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	headers = flag.StringArrayP("header", "H", nil, "Header. Can be used multiple times")
 	help    = flag.BoolP("help", "h", false, "Display this help text and exit")
 	body    = flag.StringP("body", "b", "", "Body string, containing one or more body parameters")
 	query   = flag.StringP("query", "q", "", "Query string, containing one or more query parameters")
@@ -115,10 +116,14 @@ func main() {
 		os.Exit(1)
 	}
 	if operation.HasBody() {
-		req.Header.Add("Content-Type", operation.BodyFormat)
+		req.Header.Set("Content-Type", operation.BodyFormat)
 	}
 	if *token != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", *token))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *token))
+	}
+	for _, header := range *headers {
+		kv := strings.SplitN(header, ":", 2)
+		req.Header.Set(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
 	}
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {

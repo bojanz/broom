@@ -24,14 +24,20 @@ cd my-project/
 # See broom-init --help for more examples.
 broom-init api openapi.yaml
 
-# Run "broom" without arguments to get a list of all profiles and operations.
+# Run "broom" without arguments to get a list of profiles.
 broom
 
-# Run a specific operation under a specific profile.
+# Specify a profile to get a list of operations.
+broom api
+
+# Run a specific operation.
 broom api list-orders
 
 # Show the response code and headers.
 broom api list-orders -v
+
+# Headers are passed via -H.
+broom api list-orders -H "X-MyHeader: Value" -H "X-Another: Value2"
 
 # Optional parameters are passed via -q.
 broom api list-orders -q "filter[owner]=my-user&sort=-id"
