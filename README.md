@@ -31,29 +31,29 @@ broom
 broom api
 
 # Run a specific operation.
-broom api list-orders
+broom api list-products
 
 # Show the response code and headers.
-broom api list-orders -v
+broom api list-products -v
 
 # Headers are passed via -H.
-broom api list-orders -H "X-MyHeader: Value" -H "X-Another: Value2"
+broom api list-products -H "X-MyHeader: Value" -H "X-Another: Value2"
 
 # Optional parameters are passed via -q.
-broom api list-orders -q "filter[owner]=my-user&sort=-id"
+broom api list-products -q "filter[owner_id]=my-user&sort=-sku"
 
 # Required parameters are passed directly.
-broom api get-order 01FAZ7A1H11FW16WPQZP879YX3
+broom api get-product 01FAZ7A1H11FW16WPQZP879YX3
 
 # Request body parameters are passed via -b.
 # The query string is auto-mapped to JSON if the service requires it.
-broom api create-user -b "username=my-user&password=123456"
+broom api create-product -b "name=T-Shirt&price=999&currency_code=EUR"
 
 # Omitting -b will open a terminal UI for providing body parameters.
-broom api create-user
+broom api create-product
 
 # Get the list of all arguments and parameters via --help.
-broom api create-user --help
+broom api create-product --help
 ```
 
 ## Profiles
@@ -68,8 +68,8 @@ broom-init prod openapi.json --token=PRODUCTION_KEY
 broom-init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
 
 # Proceed as usual.
-broom prod list-orders
-broom staging list-orders
+broom prod list-products
+broom staging list-products
 ```
 
 ## Authentication
