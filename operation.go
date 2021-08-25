@@ -390,6 +390,9 @@ func getSchemaType(schema openapi3.Schema) string {
 
 // castEnum converts enum values from interface{} to string.
 func castEnum(enum []interface{}) []string {
+	if len(enum) == 0 {
+		return nil
+	}
 	stringEnum := make([]string, 0, len(enum))
 	for _, v := range enum {
 		stringEnum = append(stringEnum, fmt.Sprintf("%v", v))
