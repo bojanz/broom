@@ -56,97 +56,6 @@ func (ops Operations) Tags() []string {
 	return tagNames
 }
 
-// Parameters represents a list of parameters.
-type Parameters []Parameter
-
-// ByName returns a parameter with the given name.
-func (ps Parameters) ByName(name string) (Parameter, bool) {
-	for _, p := range ps {
-		if p.Name == name {
-			return p, true
-		}
-	}
-	return Parameter{}, false
-}
-
-// Validate validates each parameter against the given values.
-func (ps Parameters) Validate(values url.Values) error {
-	for _, p := range ps {
-		value := values.Get(p.Name)
-		if err := p.Validate(value); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Parameter represents an operation parameter.
-type Parameter struct {
-	In          string
-	Name        string
-	Description string
-	Style       string
-	Type        string
-	Enum        []string
-	Deprecated  bool
-	Required    bool
-}
-
-// Label returns a human-readable parameter label.
-func (p Parameter) Label() string {
-	return strings.Title(strcase.ToDelimited(p.Name, ' '))
-}
-
-// CastString casts the given string to the parameter type.
-func (p Parameter) CastString(str string) (interface{}, error) {
-	if strings.HasPrefix(p.Type, "[]") {
-		strs := strings.Split(str, ",")
-		vs := make([]interface{}, 0, len(strs))
-		for _, s := range strs {
-			v, err := parseStr(s, p.Type[2:])
-			if err != nil {
-				return nil, fmt.Errorf("%q is not a valid %v", s, p.Type[2:])
-			}
-			vs = append(vs, v)
-		}
-		return vs, nil
-	} else {
-		v, err := parseStr(str, p.Type)
-		if err != nil {
-			return nil, fmt.Errorf("%q is not a valid %v", str, p.Type)
-		}
-		return v, nil
-	}
-}
-
-// parseStr invokes the strconv parse function for the given type.
-func parseStr(str string, newType string) (interface{}, error) {
-	if newType == "boolean" {
-		return strconv.ParseBool(str)
-	} else if newType == "integer" {
-		return strconv.ParseInt(str, 10, 64)
-	} else if newType == "number" {
-		return strconv.ParseFloat(str, 64)
-	}
-	return str, nil
-}
-
-// Validate validates the parameter against the given value.
-func (p Parameter) Validate(value string) error {
-	if value == "" && p.Required {
-		return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
-	}
-	// A strict check would not avoid empty strings, requiring them to be
-	// declared in the enum as well, but since many specs don't do that,
-	// the check here is loosened to prevent user frustration.
-	if value != "" && len(p.Enum) > 0 && !contains(p.Enum, value) {
-		formattedEnum := strings.Join(p.Enum, ", ")
-		return fmt.Errorf("invalid value for %v parameter %q (allowed values: %v)", p.In, p.Name, formattedEnum)
-	}
-
-	return nil
-}
-
 // Operation represents an available operation.
 type Operation struct {
 	ID          string
@@ -244,4 +153,95 @@ func (op Operation) RealPath(pathValues []string, query string) (string, error) 
 	}
 
 	return path, nil
+}
+
+// Parameters represents a list of parameters.
+type Parameters []Parameter
+
+// ByName returns a parameter with the given name.
+func (ps Parameters) ByName(name string) (Parameter, bool) {
+	for _, p := range ps {
+		if p.Name == name {
+			return p, true
+		}
+	}
+	return Parameter{}, false
+}
+
+// Validate validates each parameter against the given values.
+func (ps Parameters) Validate(values url.Values) error {
+	for _, p := range ps {
+		value := values.Get(p.Name)
+		if err := p.Validate(value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Parameter represents an operation parameter.
+type Parameter struct {
+	In          string
+	Name        string
+	Description string
+	Style       string
+	Type        string
+	Enum        []string
+	Deprecated  bool
+	Required    bool
+}
+
+// Label returns a human-readable parameter label.
+func (p Parameter) Label() string {
+	return strings.Title(strcase.ToDelimited(p.Name, ' '))
+}
+
+// CastString casts the given string to the parameter type.
+func (p Parameter) CastString(str string) (interface{}, error) {
+	if strings.HasPrefix(p.Type, "[]") {
+		strs := strings.Split(str, ",")
+		vs := make([]interface{}, 0, len(strs))
+		for _, s := range strs {
+			v, err := parseStr(s, p.Type[2:])
+			if err != nil {
+				return nil, fmt.Errorf("%q is not a valid %v", s, p.Type[2:])
+			}
+			vs = append(vs, v)
+		}
+		return vs, nil
+	} else {
+		v, err := parseStr(str, p.Type)
+		if err != nil {
+			return nil, fmt.Errorf("%q is not a valid %v", str, p.Type)
+		}
+		return v, nil
+	}
+}
+
+// parseStr invokes the strconv parse function for the given type.
+func parseStr(str string, newType string) (interface{}, error) {
+	if newType == "boolean" {
+		return strconv.ParseBool(str)
+	} else if newType == "integer" {
+		return strconv.ParseInt(str, 10, 64)
+	} else if newType == "number" {
+		return strconv.ParseFloat(str, 64)
+	}
+	return str, nil
+}
+
+// Validate validates the parameter against the given value.
+func (p Parameter) Validate(value string) error {
+	if value == "" && p.Required {
+		return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
+	}
+	// A strict check would not avoid empty strings, requiring them to be
+	// declared in the enum as well, but since many specs don't do that,
+	// the check here is loosened to prevent user frustration.
+	if value != "" && len(p.Enum) > 0 && !contains(p.Enum, value) {
+		formattedEnum := strings.Join(p.Enum, ", ")
+		return fmt.Errorf("invalid value for %v parameter %q (allowed values: %v)", p.In, p.Name, formattedEnum)
+	}
+
+	return nil
 }
