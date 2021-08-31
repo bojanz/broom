@@ -21,25 +21,9 @@ paths:
       parameters:
         - in: query
           name: filter[owner_id]
-          description: Allows filtering by owner_id using one or more operators.
-          style: deepObject
-          explode: true
+          description: Allows filtering by owner_id.
           schema:
-            $ref: '#/components/schemas/IDFilter'
-        - in: query
-          name: filter[sku]
-          description: Allows filtering by sku using one or more operators.
-          style: deepObject
-          explode: true
-          schema:
-            $ref: '#/components/schemas/StringFilter'
-        - in: query
-          name: filter[updated_at]
-          description: Allows filtering by updated_at using one or more operators.
-          style: deepObject
-          explode: true
-          schema:
-            $ref: '#/components/schemas/DateTimeFilter'
+            type: string
         - in: query
           name: page[before]
           description: Shows 50 products before the given ID.
@@ -302,93 +286,6 @@ components:
           description: >-
             A human-readable explanation specific to this occurrence of the
             problem.
-    IDFilter:
-      type: object
-      properties:
-        eq:
-          type: string
-          description: Equal
-        ne:
-          type: string
-          description: Not equal
-        in:
-          type: string
-          description: In (comma-separated list)
-        nin:
-          type: string
-          description: Not in (comma-separated list)
-    DateTimeFilter:
-      type: object
-      properties:
-        eq:
-          type: string
-          description: Equal
-        ne:
-          type: string
-          description: Not equal
-        gt:
-          type: string
-          description: Greater than
-        gte:
-          type: string
-          description: Greater than or equal
-        lt:
-          type: string
-          description: Less than
-        lte:
-          type: string
-          description: Less than or equal
-    NumericFilter:
-      type: object
-      properties:
-        eq:
-          type: string
-          description: Equal
-        ne:
-          type: string
-          description: Not equal
-        in:
-          type: string
-          description: In (comma-separated list)
-        nin:
-          type: string
-          description: Not in (comma-separated list)
-        gt:
-          type: string
-          description: Greater than
-        gte:
-          type: string
-          description: Greater than or equal
-        lt:
-          type: string
-          description: Less than
-        lte:
-          type: string
-          description: Less than or equal
-    StringFilter:
-      type: object
-      properties:
-        eq:
-          type: string
-          description: Equal
-        ne:
-          type: string
-          description: Not equal
-        in:
-          type: string
-          description: In (comma-separated list)
-        nin:
-          type: string
-          description: Not in (comma-separated list)
-        contains:
-          type: string
-          description: Contains
-        starts:
-          type: string
-          description: Starts with
-        ends:
-          type: string
-          description: Ends with
   parameters:
     ProductID:
       in: path

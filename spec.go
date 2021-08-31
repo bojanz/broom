@@ -9,19 +9,19 @@ import (
 	"fmt"
 	"hash/adler32"
 	"net/http"
+	"os"
 	"sort"
 
+	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/ghodss/yaml"
 	"github.com/iancoleman/strcase"
 )
 
 // LoadOperations loads available operations from a specification on disk.
 func LoadOperations(filename string) (Operations, error) {
-	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
-	openapi3.DefineStringFormat("ulid", `^[0-7]{1}[0-9A-HJKMNP-TV-Z]{25}$`)
-	openapi3.SchemaFormatValidationDisabled = true
-
-	spec, err := openapi3.NewLoader().LoadFromFile(filename)
+	spec, err := loadSpec(filename)
 	if err != nil {
 		return nil, fmt.Errorf("load spec: %w", err)
 	}
@@ -61,6 +61,44 @@ func LoadOperations(filename string) (Operations, error) {
 	}
 
 	return operations, nil
+}
+
+// loadSpec loads an OpenAPI 2.0/3.0 specification from disk.
+func loadSpec(filename string) (*openapi3.T, error) {
+	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
+	openapi3.DefineStringFormat("ulid", `^[0-7]{1}[0-9A-HJKMNP-TV-Z]{25}$`)
+	openapi3.SchemaFormatValidationDisabled = true
+
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	aux := struct {
+		OpenAPI string `json:"openapi"`
+		Swagger string `json:"swagger"`
+	}{}
+	// We don't care if unmarshaling fails at this point, we'll assume
+	// OpenAPI 3.0 and let openapi3.Loader report the actual problem.
+	_ = yaml.Unmarshal(b, &aux)
+
+	var spec *openapi3.T
+	if aux.Swagger != "" {
+		var spec2 *openapi2.T
+		if err := yaml.Unmarshal(b, &spec2); err != nil {
+			return nil, fmt.Errorf("v2: %w", err)
+		}
+		spec, err = openapi2conv.ToV3(spec2)
+		if err != nil {
+			return nil, fmt.Errorf("v2 to v3: %w", err)
+		}
+	} else {
+		spec, err = openapi3.NewLoader().LoadFromData(b)
+		if err != nil {
+			return nil, fmt.Errorf("v3: %w", err)
+		}
+	}
+
+	return spec, nil
 }
 
 // newOperationFromSpec creates a new operation from the loaded specification.

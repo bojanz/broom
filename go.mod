@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/getkin/kin-openapi v0.74.0
+	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.6
 	github.com/iancoleman/strcase v0.2.0
 	github.com/rivo/tview v0.0.0-20210624165335-29d673af0ce2

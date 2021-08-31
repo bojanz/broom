@@ -1,0 +1,290 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: Product API
+  description: An imaginary API used for testing Broom.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+host: api.test-product-api.io
+basePath: "/"
+tags:
+  - name: Products
+schemes:
+  - https
+paths:
+  "/products":
+    get:
+      summary: List products
+      description: Retrieves a list of products matching the specified criteria.
+      operationId: list-products
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: filter[owner_id]
+          description: Allows filtering by owner_id.
+          type: string
+        - in: query
+          name: page[before]
+          description: Shows 50 products before the given ID.
+          format: ulid
+          type: string
+        - in: query
+          name: page[after]
+          description: Shows 50 products after the given ID.
+          format: ulid
+          type: string
+        - in: query
+          name: sort
+          description: |-
+            Allows sorting by one or more fields, separated by commas.<br>
+            Use a dash ("-") to sort descending.
+          type: string
+      responses:
+        '200':
+          description: Successful response.
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  "$ref": "#/definitions/Product"
+              _links:
+                "$ref": "#/definitions/ListLinks"
+        default:
+          description: Error response.
+          schema:
+            "$ref": "#/definitions/Error"
+      produces:
+        - application/json
+        - application/problem+json
+    post:
+      summary: Create product
+      description: Creates a new product.
+      operationId: create-product
+      tags:
+        - Products
+      responses:
+        '201':
+          description: Successful response.
+          schema:
+            "$ref": "#/definitions/Product"
+        default:
+          description: Error response.
+          schema:
+            "$ref": "#/definitions/Error"
+      parameters:
+        - required: true
+          name: body
+          in: body
+          schema:
+            type: object
+            required:
+              - name
+              - price
+              - currency_code
+            properties:
+              owner_id:
+                type: string
+                format: uuid
+                description: ID of the owner. Defaults to the requester.
+              name:
+                type: string
+                description: The product name.
+              sku:
+                type: string
+                description: The product sku.
+              price:
+                type: integer
+                description: The product price, in cents.
+              currency_code:
+                type: string
+                description: The currency code.
+                enum: [EUR, USD]
+              status:
+                type: boolean
+                description: Whether the product is available for purchase.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+        - application/problem+json
+  "/products/{product_id}":
+    parameters:
+      - in: path
+        name: product_id
+        description: The ID of the product.
+        required: true
+        format: ulid
+        type: string
+    get:
+      summary: Get product
+      description: Retrieves the specified product.
+      operationId: get-product
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Successful response.
+          schema:
+            "$ref": "#/definitions/Product"
+        default:
+          description: Error response.
+          schema:
+            "$ref": "#/definitions/Error"
+      parameters: []
+      produces:
+        - application/json
+        - application/problem+json
+    patch:
+      summary: Update product
+      description: Updates the specified product.
+      operationId: update-product
+      tags:
+      - Products
+      responses:
+        '200':
+          description: Successful response.
+          schema:
+            "$ref": "#/definitions/Product"
+        default:
+          description: Error response.
+          schema:
+            "$ref": "#/definitions/Error"
+      parameters:
+        - name: body
+          in: body
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The product name.
+              sku:
+                type: string
+                description: The product sku.
+              price:
+                type: integer
+                description: The product price, in cents.
+              currency_code:
+                type: string
+                description: The currency code.
+                enum: [EUR, USD]
+              status:
+                type: boolean
+                description: Whether the product is available for purchase.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+        - application/problem+json
+    delete:
+      summary: Delete product
+      description: Deletes the specified product.
+      operationId: delete-product
+      tags:
+        - Products
+      responses:
+        '204':
+          description: Product deleted.
+        default:
+          description: Error response.
+          schema:
+            "$ref": "#/definitions/Error"
+      parameters: []
+      produces:
+        - application/problem+json
+definitions:
+  Product:
+    type: object
+    properties:
+      id:
+        type: string
+        format: ulid
+        description: The ID of the product.
+      owner_id:
+        type: string
+        format: uuid
+        description: The ID of the owner.
+      name:
+        type: string
+        description: The product name.
+      sku:
+        type: string
+        description: The product sku.
+      price:
+        type: integer
+        description: The product price, in cents.
+      currency_code:
+        type: string
+        description: The currency code.
+        enum: [EUR, USD]
+      status:
+        type: boolean
+        description: Whether the product is available for purchase.
+      created_at:
+        type: string
+        format: date-time
+        description: The date and time when the product was created.
+      updated_at:
+        type: string
+        format: date-time
+        description: The date and time when the product was last updated.
+      _links:
+        type: object
+        properties:
+          self:
+            type: object
+            description: Link to the current product.
+            properties:
+              href:
+                type: string
+                description: URL of the link.
+  ListLinks:
+    type: object
+    properties:
+      self:
+        type: object
+        description: Link to the current set of items.
+        properties:
+          href:
+            type: string
+            description: URL of the link.
+      previous:
+        type: object
+        description: Link to the previous set of items.
+        properties:
+          href:
+            type: string
+            description: URL of the link.
+      next:
+        type: object
+        description: Link to the next set of items.
+        properties:
+          href:
+            type: string
+            description: URL of the link
+  Error:
+    type: object
+    properties:
+      type:
+        type: string
+        format: uri
+        description: A URI reference that identifies the problem type.
+      title:
+        type: string
+        description: A short, human-readable summary of the problem type.
+      status:
+        type: integer
+        format: int32
+        description: The HTTP status code generated by the origin server.
+        minimum: 100
+        maximum: 600
+        exclusiveMaximum: true
+        example: 404
+      detail:
+        type: string
+        description: A human-readable explanation specific to this occurrence of the
+          problem.

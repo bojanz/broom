@@ -30,23 +30,8 @@ func TestLoadOperations(t *testing.T) {
 				broom.Parameter{
 					In:          "query",
 					Name:        "filter[owner_id]",
-					Description: "Allows filtering by owner_id using one or more operators.",
-					Style:       "deepObject",
-					Type:        "object",
-				},
-				broom.Parameter{
-					In:          "query",
-					Name:        "filter[sku]",
-					Description: "Allows filtering by sku using one or more operators.",
-					Style:       "deepObject",
-					Type:        "object",
-				},
-				broom.Parameter{
-					In:          "query",
-					Name:        "filter[updated_at]",
-					Description: "Allows filtering by updated_at using one or more operators.",
-					Style:       "deepObject",
-					Type:        "object",
+					Description: "Allows filtering by owner_id.",
+					Type:        "string",
 				},
 				broom.Parameter{
 					In:          "query",
@@ -181,7 +166,16 @@ func TestLoadOperations(t *testing.T) {
 			Parameters:  broom.Parameters{idParam},
 		},
 	}
+
 	gotOps, err := broom.LoadOperations("testdata/openapi3.yaml")
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if diff := cmp.Diff(wantOps, gotOps); diff != "" {
+		t.Errorf("operation mismatch (-want +got):\n%s", diff)
+	}
+
+	gotOps, err = broom.LoadOperations("testdata/swagger.yaml")
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
