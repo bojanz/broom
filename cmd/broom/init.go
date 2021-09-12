@@ -14,45 +14,52 @@ import (
 	"github.com/bojanz/broom"
 )
 
-const usage = `Usage: broom-init PROFILE SPEC_FILE
+const initDescription = `Create a new profile`
+
+const initUsage = `Usage: broom init <profile> <spec_file>
 
 Creates a Broom profile using the given OpenAPI specification.
 
-A .broom.yaml config file will be written to the current directory.
+The profile is added to a .broom.yaml config file in the current directory.
 
 Examples:
     Single profile:
-        broom-init api openapi.yaml
+        broom init api openapi.yaml
 
     Multiple profiles and an API key:
-        broom-init prod openapi.json --token=PRODUCTION_KEY
-        broom-init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
+        broom init prod openapi.json --token=PRODUCTION_KEY
+        broom init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
 
     Authentication through an external command (e.g. for OAuth):
-        broom-init api openapi.json --token-cmd="sh get-token.sh"
+        broom init api openapi.json --token-cmd="sh get-token.sh"
 
 Options:`
 
-var (
-	_         = flag.BoolP("help", "h", false, "Display this help text and exit")
-	serverURL = flag.String("server-url", "", "Server URL. Overrides the one from the specification file")
-	token     = flag.String("token", "", "Access token. Used to authorize every request")
-	tokenCmd  = flag.String("token-cmd", "", "Access token command. Executed on every request to retrieve a token")
-)
-
-func main() {
-	flag.Usage = func() {
-		fmt.Println(usage)
-		flag.PrintDefaults()
+func initCmd(args []string) {
+	flags := flag.NewFlagSet("init", flag.ExitOnError)
+	var (
+		_         = flags.BoolP("help", "h", false, "Display this help text and exit")
+		serverURL = flags.String("server-url", "", "Server URL. Overrides the one from the specification file")
+		token     = flags.String("token", "", "Access token. Used to authorize every request")
+		tokenCmd  = flags.String("token-cmd", "", "Access token command. Executed on every request to retrieve a token")
+	)
+	flags.Usage = func() {
+		fmt.Println(initUsage)
+		flags.PrintDefaults()
 	}
-	flag.Parse()
-
-	if flag.NArg() < 2 {
-		flag.Usage()
+	flags.Parse(args)
+	if flags.NArg() < 3 {
+		flags.Usage()
 		return
 	}
-	profile := flag.Arg(0)
-	filename := filepath.Clean(flag.Arg(1))
+
+	profile := flags.Arg(1)
+	filename := filepath.Clean(flags.Arg(2))
+	// Ensure a profile name doesn't conflict with a command name.
+	if profile == "init" {
+		fmt.Fprintf(os.Stderr, "Error: can't name a profile %q, please choose a different name\n", profile)
+		os.Exit(1)
+	}
 	// Confirm that the spec file exists and contains valid JSON or YAML.
 	b, err := os.ReadFile(filename)
 	if err != nil {

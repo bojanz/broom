@@ -9,9 +9,8 @@ JSON output is colored and formatted, authentication is handled.
 
 ```bash
 go install github.com/bojanz/broom/cmd/broom@latest
-go install github.com/bojanz/broom/cmd/broom-init@latest
 ```
-or run `make` yourself inside the source directory, then copy the two binaries from bin/.
+or run `make` yourself inside the source directory, then copy the binary from bin/.
 
 ## Usage
 
@@ -21,8 +20,8 @@ Broom can be initialized and used per-project, or globally.
 cd my-project/
 
 # Generate a .broom.yaml with an "api" profile.
-# See broom-init --help for more examples.
-broom-init api openapi.yaml
+# See broom init --help for more examples.
+broom init api openapi.yaml
 
 # Run "broom" without arguments to get a list of profiles.
 broom
@@ -58,14 +57,13 @@ broom api create-product --help
 
 ## Profiles
 
-The broom-config tool allows creating multiple profiles, to allow
-working with multiple environments, e.g. staging and production.
+Broom allows creating multiple profiles for working with different environments, e.g. staging and production.
 Each profile has its own server url and authentication settings.
 
 ```bash
 cd my-project/
-broom-init prod openapi.json --token=PRODUCTION_KEY
-broom-init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
+broom init prod openapi.json --token=PRODUCTION_KEY
+broom init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
 
 # Proceed as usual.
 broom prod list-products
@@ -79,7 +77,7 @@ This is the usual way of sending API keys.
 
 For more advanced use cases, Broom supports fetching an access token through an external command:
 ```
-    broom-init api openapi.json --token-cmd="sh get-token.sh"
+    broom init api openapi.json --token-cmd="sh get-token.sh"
 ```
 
 The external command can do a 2-legged OAuth request via curl, or it can retrieve an API key from a vault.

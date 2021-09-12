@@ -3,7 +3,6 @@ FLAGS := -tags='osusergo' -trimpath -ldflags='-s -extldflags "-static"'
 
 build: clean
 	go build -o ./bin/broom $(FLAGS) cmd/broom/*
-	go build -o ./bin/broom-init $(FLAGS) cmd/broom-init/*
 
 clean:
 	rm -rf ./bin
