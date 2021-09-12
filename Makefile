@@ -1,5 +1,7 @@
 export CGO_ENABLED=0
-FLAGS := -tags='osusergo' -trimpath -ldflags='-s -extldflags "-static"'
+VERSION := $(shell git describe --tags --always)
+BUILD_INFO := -X "main.Version=$(VERSION)"
+FLAGS := -tags='osusergo' -trimpath -ldflags='$(BUILD_INFO) -s -extldflags "-static"'
 
 build: clean
 	go build -o ./bin/broom $(FLAGS) cmd/broom/*

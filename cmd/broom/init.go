@@ -56,7 +56,7 @@ func initCmd(args []string) {
 	profile := flags.Arg(1)
 	filename := filepath.Clean(flags.Arg(2))
 	// Ensure a profile name doesn't conflict with a command name.
-	if profile == "init" {
+	if profile == "init" || profile == "version" {
 		fmt.Fprintf(os.Stderr, "Error: can't name a profile %q, please choose a different name\n", profile)
 		os.Exit(1)
 	}

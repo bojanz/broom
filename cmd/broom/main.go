@@ -32,6 +32,7 @@ func main() {
 		fmt.Fprintln(w, "\nCommands:")
 		fmt.Fprintf(w, "\t<profile>\t%v\n", profileDescription)
 		fmt.Fprintf(w, "\tinit\t%v\n", initDescription)
+		fmt.Fprintf(w, "\tversion\t%v\n", versionDescription)
 		if len(profiles) > 0 {
 			fmt.Fprintln(w, "\nProfiles:")
 			for _, profile := range profiles {
@@ -48,6 +49,8 @@ func main() {
 	switch command {
 	case "init":
 		initCmd(args)
+	case "version":
+		versionCmd(args)
 	default:
 		profileCmd(args)
 	}
