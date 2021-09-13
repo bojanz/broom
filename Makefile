@@ -6,6 +6,12 @@ FLAGS := -tags='osusergo' -trimpath -ldflags='$(BUILD_INFO) -s -extldflags "-sta
 build: clean
 	go build -o ./bin/broom $(FLAGS) cmd/broom/*
 
+release: clean
+	GOOS=darwin  GOARCH=arm64 go build -o ./bin/broom-$(VERSION)-macos-arm64 $(FLAGS) cmd/broom/*
+	GOOS=darwin  GOARCH=amd64 go build -o ./bin/broom-$(VERSION)-macos-x64   $(FLAGS) cmd/broom/*
+	GOOS=linux   GOARCH=amd64 go build -o ./bin/broom-$(VERSION)-linux-x64   $(FLAGS) cmd/broom/*
+	GOOS=windows GOARCH=amd64 go build -o ./bin/broom-$(VERSION)-win64.exe   $(FLAGS) cmd/broom/*
+
 clean:
 	rm -rf ./bin
 
@@ -33,4 +39,4 @@ test:
 	go test $(FLAGS) ./...
 
 .DEFAULT_GOAL := build
-.PHONY: build clean lint lint-gofmt lint-gomod lint-govet lint-staticcheck test
+.PHONY: build release clean lint lint-gofmt lint-gomod lint-govet lint-staticcheck test
