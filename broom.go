@@ -64,6 +64,12 @@ func IsJSON(mediaType string) bool {
 
 // PrettyJSON pretty-prints the given JSON.
 func PrettyJSON(json []byte) []byte {
+	// Many web stacks (Go, Ruby on Rails, Symfony) escape the &, <, >
+	// HTML characters for safety reasons. Unescape them for readability.
+	json = bytes.ReplaceAll(json, []byte("\\u0026"), []byte("&"))
+	json = bytes.ReplaceAll(json, []byte("\\u003c"), []byte("<"))
+	json = bytes.ReplaceAll(json, []byte("\\u003e"), []byte(">"))
+
 	return pretty.Color(pretty.Pretty(json), nil)
 }
 
