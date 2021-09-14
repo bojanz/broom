@@ -14,14 +14,12 @@ or run `make` yourself inside the source directory, then copy the binary from bi
 
 ## Usage
 
-Broom can be initialized and used per-project, or globally.
-
 ```bash
 cd my-project/
 
 # Generate a .broom.yaml with an "api" profile.
-# See broom init --help for more examples.
-broom init api openapi.yaml
+# See broom add --help for more examples.
+broom add api openapi.yaml
 
 # Run "broom" without arguments to get a list of profiles.
 broom
@@ -62,8 +60,8 @@ Each profile has its own server url and authentication settings.
 
 ```bash
 cd my-project/
-broom init prod openapi.json --token=PRODUCTION_KEY
-broom init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
+broom add prod openapi.json --token=PRODUCTION_KEY
+broom add staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
 
 # Proceed as usual.
 broom prod list-products
@@ -72,12 +70,12 @@ broom staging list-products
 
 ## Authentication
 
-An access token can be set on the profile (via `broom init --token`) or provided per-operation (via `broom --token`).
+An access token can be set on the profile (via `broom add --token`) or provided per-operation (via `broom --token`).
 This is the usual way of sending API keys.
 
 For more advanced use cases, Broom supports fetching an access token through an external command:
 ```
-    broom init api openapi.json --token-cmd="sh get-token.sh"
+    broom add api openapi.json --token-cmd="sh get-token.sh"
 ```
 
 The external command can do a 2-legged OAuth request via curl, or it can retrieve an API key from a vault.

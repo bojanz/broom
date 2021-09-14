@@ -14,29 +14,27 @@ import (
 	"github.com/bojanz/broom"
 )
 
-const initDescription = `Create a new profile`
+const addDescription = `Add a new profile`
 
-const initUsage = `Usage: broom init <profile> <spec_file>
+const addUsage = `Usage: broom add <profile> <spec_file>
 
-Creates a Broom profile using the given OpenAPI specification.
-
-The profile is added to a .broom.yaml config file in the current directory.
+Adds a profile to the .broom.yaml config file in the current directory.
 
 Examples:
     Single profile:
-        broom init api openapi.yaml
+        broom add api openapi.yaml
 
     Multiple profiles and an API key:
-        broom init prod openapi.json --token=PRODUCTION_KEY
-        broom init staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
+        broom add prod openapi.json --token=PRODUCTION_KEY
+        broom add staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
 
     Authentication through an external command (e.g. for OAuth):
-        broom init api openapi.json --token-cmd="sh get-token.sh"
+        broom add api openapi.json --token-cmd="sh get-token.sh"
 
 Options:`
 
-func initCmd(args []string) {
-	flags := flag.NewFlagSet("init", flag.ExitOnError)
+func addCmd(args []string) {
+	flags := flag.NewFlagSet("add", flag.ExitOnError)
 	var (
 		_         = flags.BoolP("help", "h", false, "Display this help text and exit")
 		serverURL = flags.String("server-url", "", "Server URL. Overrides the one from the specification file")
@@ -44,7 +42,7 @@ func initCmd(args []string) {
 		tokenCmd  = flags.String("token-cmd", "", "Access token command. Executed on every request to retrieve a token")
 	)
 	flags.Usage = func() {
-		fmt.Println(initUsage)
+		fmt.Println(addUsage)
 		flags.PrintDefaults()
 	}
 	flags.Parse(args)
@@ -56,7 +54,7 @@ func initCmd(args []string) {
 	profile := flags.Arg(1)
 	filename := filepath.Clean(flags.Arg(2))
 	// Ensure a profile name doesn't conflict with a command name.
-	if profile == "init" || profile == "version" {
+	if profile == "add" || profile == "rm" || profile == "version" {
 		fmt.Fprintf(os.Stderr, "Error: can't name a profile %q, please choose a different name\n", profile)
 		os.Exit(1)
 	}
@@ -95,5 +93,5 @@ func initCmd(args []string) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stdout, "Initialized the %v profile in .broom.yaml\n", profile)
+	fmt.Fprintf(os.Stdout, "Added the %v profile to .broom.yaml\n", profile)
 }

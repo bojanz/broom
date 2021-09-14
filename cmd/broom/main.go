@@ -31,7 +31,8 @@ func main() {
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		fmt.Fprintln(w, "\nCommands:")
 		fmt.Fprintf(w, "\t<profile>\t%v\n", profileDescription)
-		fmt.Fprintf(w, "\tinit\t%v\n", initDescription)
+		fmt.Fprintf(w, "\tadd\t%v\n", addDescription)
+		fmt.Fprintf(w, "\trm\t%v\n", rmDescription)
 		fmt.Fprintf(w, "\tversion\t%v\n", versionDescription)
 		if len(profiles) > 0 {
 			fmt.Fprintln(w, "\nProfiles:")
@@ -39,7 +40,7 @@ func main() {
 				fmt.Fprintf(w, "\t%v\n", profile)
 			}
 		} else {
-			fmt.Fprintln(w, "\nNo profiles found. Run 'broom init' to get started.")
+			fmt.Fprintln(w, "\nNo profiles found. Run 'broom add' to get started.")
 		}
 		w.Flush()
 
@@ -47,8 +48,10 @@ func main() {
 	}
 
 	switch command {
-	case "init":
-		initCmd(args)
+	case "add":
+		addCmd(args)
+	case "rm":
+		rmCmd(args)
 	case "version":
 		versionCmd(args)
 	default:
