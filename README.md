@@ -1,4 +1,4 @@
-# Broom
+# Broom [![Build](https://github.com/bojanz/broom/actions/workflows/build.yml/badge.svg)](https://github.com/bojanz/broom/actions/workflows/build.yml)
 
 Broom is an API client powered by OpenAPI.
 
