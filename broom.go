@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/tidwall/pretty"
 )
@@ -27,9 +26,7 @@ type Result struct {
 // The output consists of the request body (pretty-printed if JSON),
 // and optionally the status code and headers (when "verbose" is true).
 func Execute(req *http.Request, verbose bool) (Result, error) {
-	httpClient := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+	httpClient := &http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return Result{}, err
