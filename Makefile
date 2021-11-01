@@ -15,11 +15,11 @@ release: clean
 clean:
 	rm -rf ./bin
 
-lint: lint-gofmt lint-gomod lint-govet lint-staticcheck
+lint: lint-goimports lint-gomod lint-govet lint-staticcheck
 
-lint-gofmt:
-ifneq ($(shell gofmt -l . | wc -l),0)
-	gofmt -l -d .
+lint-goimports:
+ifneq ($(shell goimports -l . | wc -l),0)
+	goimports -l -d .
 	@false
 endif
 
