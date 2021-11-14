@@ -155,6 +155,7 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 					Description: schema.Value.Description,
 					Type:        getSchemaType(*schema.Value),
 					Enum:        castEnum(schema.Value.Enum),
+					Default:     schema.Value.Default,
 					Deprecated:  schema.Value.Deprecated,
 					Required:    required,
 				})
@@ -175,6 +176,7 @@ func newParameterFromSpec(specParam openapi3.Parameter) Parameter {
 		Style:       specParam.Style,
 		Type:        getSchemaType(*specParam.Schema.Value),
 		Enum:        castEnum(specParam.Schema.Value.Enum),
+		Default:     specParam.Schema.Value.Default,
 		Deprecated:  specParam.Deprecated,
 		Required:    specParam.Required,
 	}

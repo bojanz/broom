@@ -231,17 +231,29 @@ func bodyForm(operation broom.Operation) (string, bool) {
 		if param.Required {
 			paramLabel = fmt.Sprintf("%v*", paramLabel)
 		}
+		paramDefault := ""
+		if param.Default != nil {
+			paramDefault = fmt.Sprintf("%v", param.Default)
+		}
 
 		if param.Type == "boolean" {
-			form.AddCheckbox(paramLabel, false, func(checked bool) {
+			form.AddCheckbox(paramLabel, paramDefault == "true", func(checked bool) {
 				values.Set(paramName, strconv.FormatBool(checked))
 			})
 		} else if len(param.Enum) > 0 {
-			form.AddDropDown(paramLabel, param.Enum, 0, func(option string, optionIndex int) {
+			initialOption := 0
+			for k, v := range param.Enum {
+				if v == paramDefault {
+					initialOption = k
+					break
+				}
+			}
+
+			form.AddDropDown(paramLabel, param.Enum, initialOption, func(option string, optionIndex int) {
 				values.Set(paramName, option)
 			})
 		} else {
-			form.AddInputField(paramLabel, "", 40, nil, func(text string) {
+			form.AddInputField(paramLabel, paramDefault, 40, nil, func(text string) {
 				values.Set(paramName, text)
 			})
 		}

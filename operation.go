@@ -187,6 +187,7 @@ type Parameter struct {
 	Style       string
 	Type        string
 	Enum        []string
+	Default     interface{}
 	Deprecated  bool
 	Required    bool
 }
