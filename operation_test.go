@@ -174,6 +174,38 @@ func TestParameter_Label(t *testing.T) {
 	}
 }
 
+func TestParameter_NameWithFlags(t *testing.T) {
+	param := broom.Parameter{
+		Name: "first_name",
+	}
+	got := param.NameWithFlags()
+	want := "first_name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	param = broom.Parameter{
+		Name:     "first_name",
+		Required: true,
+	}
+	got = param.NameWithFlags()
+	want = "first_name (required)"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	param = broom.Parameter{
+		Name:       "first_name",
+		Deprecated: true,
+		Required:   true,
+	}
+	got = param.NameWithFlags()
+	want = "first_name (deprecated, required)"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestOperation_ParametersIn(t *testing.T) {
 	operation := broom.Operation{
 		Parameters: broom.Parameters{

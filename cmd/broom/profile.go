@@ -181,13 +181,7 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range queryParams {
-			name := param.Name
-			if param.Required {
-				name = fmt.Sprintf("%v (required)", name)
-			} else if param.Deprecated {
-				name = fmt.Sprintf("%v (deprecated)", name)
-			}
-			fmt.Fprintf(w, "\t%v\t%v\n", name, param.Description)
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
 		}
 		w.Flush()
 	}
@@ -195,13 +189,7 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nBody parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range bodyParams {
-			name := param.Name
-			if param.Required {
-				name = fmt.Sprintf("%v (required)", name)
-			} else if param.Deprecated {
-				name = fmt.Sprintf("%v (deprecated)", name)
-			}
-			fmt.Fprintf(w, "\t%v\t%v\n", name, param.Description)
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
 		}
 		w.Flush()
 	}

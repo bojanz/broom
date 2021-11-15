@@ -197,6 +197,23 @@ func (p Parameter) Label() string {
 	return strings.Title(strcase.ToDelimited(p.Name, ' '))
 }
 
+// NameWithFlags returns the parameter name with flags (deprecated, required)
+func (p Parameter) NameWithFlags() string {
+	flags := make([]string, 0, 2)
+	if p.Deprecated {
+		flags = append(flags, "deprecated")
+	}
+	if p.Required {
+		flags = append(flags, "required")
+	}
+	name := p.Name
+	if len(flags) > 0 {
+		name = fmt.Sprintf("%v (%v)", name, strings.Join(flags, ", "))
+	}
+
+	return name
+}
+
 // CastString casts the given string to the parameter type.
 func (p Parameter) CastString(str string) (interface{}, error) {
 	if strings.HasPrefix(p.Type, "[]") {
