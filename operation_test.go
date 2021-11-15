@@ -78,134 +78,6 @@ func TestOperations_Tags(t *testing.T) {
 	}
 }
 
-func TestParameters_ByName(t *testing.T) {
-	parameters := broom.Parameters{
-		broom.Parameter{
-			In:       "query",
-			Name:     "billing_country",
-			Required: true,
-		},
-		broom.Parameter{
-			In:   "query",
-			Name: "sort",
-		},
-	}
-
-	p1, ok := parameters.ByName("billing_country")
-	if p1.Name != "billing_country" || ok != true {
-		t.Errorf("got %v, %v want billing_country, true", p1.Name, ok)
-	}
-
-	p2, ok := parameters.ByName("sort")
-	if p2.Name != "sort" || ok != true {
-		t.Errorf("got %v, %v want sort, true", p2.Name, ok)
-	}
-
-	p3, ok := parameters.ByName("billing_region")
-	if p3.Name != "" || ok != false {
-		t.Errorf(`got %v, %v want "", false`, p3.Name, ok)
-	}
-}
-
-func TestParameters_Validate(t *testing.T) {
-	parameters := broom.Parameters{
-		broom.Parameter{
-			In:       "query",
-			Name:     "billing_country",
-			Required: true,
-		},
-		broom.Parameter{
-			In:   "query",
-			Name: "sort",
-			Enum: []string{"billing_country", "user_id"},
-		},
-	}
-
-	// Required parameter missing.
-	err := parameters.Validate(url.Values{})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Required parameter provided but empty
-	err = parameters.Validate(url.Values{"billing_country": {""}})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Provided required parameter.
-	err = parameters.Validate(url.Values{"billing_country": {"US"}})
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Enum validation.
-	err = parameters.Validate(url.Values{"billing_country": {"US"}, "sort": {"invalid"}})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `invalid value for query parameter "sort" (allowed values: billing_country, user_id)` {
-		t.Errorf("unexpected error %v", err)
-	}
-}
-
-func TestParameter_Label(t *testing.T) {
-	// Conversion from snake_case.
-	param := broom.Parameter{
-		Name: "first_name",
-	}
-	got := param.Label()
-	want := "First Name"
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-
-	// Conversion from camelCase.
-	param = broom.Parameter{
-		Name: "lastName",
-	}
-	got = param.Label()
-	want = "Last Name"
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-}
-
-func TestParameter_NameWithFlags(t *testing.T) {
-	param := broom.Parameter{
-		Name: "first_name",
-	}
-	got := param.NameWithFlags()
-	want := "first_name"
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-
-	param = broom.Parameter{
-		Name:     "first_name",
-		Required: true,
-	}
-	got = param.NameWithFlags()
-	want = "first_name (required)"
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-
-	param = broom.Parameter{
-		Name:       "first_name",
-		Deprecated: true,
-		Required:   true,
-	}
-	got = param.NameWithFlags()
-	want = "first_name (deprecated, required)"
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-}
-
 func TestOperation_ParametersIn(t *testing.T) {
 	operation := broom.Operation{
 		Parameters: broom.Parameters{
@@ -524,5 +396,133 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
+	}
+}
+
+func TestParameters_ByName(t *testing.T) {
+	parameters := broom.Parameters{
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+		},
+	}
+
+	p1, ok := parameters.ByName("billing_country")
+	if p1.Name != "billing_country" || ok != true {
+		t.Errorf("got %v, %v want billing_country, true", p1.Name, ok)
+	}
+
+	p2, ok := parameters.ByName("sort")
+	if p2.Name != "sort" || ok != true {
+		t.Errorf("got %v, %v want sort, true", p2.Name, ok)
+	}
+
+	p3, ok := parameters.ByName("billing_region")
+	if p3.Name != "" || ok != false {
+		t.Errorf(`got %v, %v want "", false`, p3.Name, ok)
+	}
+}
+
+func TestParameters_Validate(t *testing.T) {
+	parameters := broom.Parameters{
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+			Enum: []string{"billing_country", "user_id"},
+		},
+	}
+
+	// Required parameter missing.
+	err := parameters.Validate(url.Values{})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required query parameter "billing_country"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Required parameter provided but empty
+	err = parameters.Validate(url.Values{"billing_country": {""}})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required query parameter "billing_country"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Provided required parameter.
+	err = parameters.Validate(url.Values{"billing_country": {"US"}})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Enum validation.
+	err = parameters.Validate(url.Values{"billing_country": {"US"}, "sort": {"invalid"}})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `invalid value for query parameter "sort" (allowed values: billing_country, user_id)` {
+		t.Errorf("unexpected error %v", err)
+	}
+}
+
+func TestParameter_Label(t *testing.T) {
+	// Conversion from snake_case.
+	param := broom.Parameter{
+		Name: "first_name",
+	}
+	got := param.Label()
+	want := "First Name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	// Conversion from camelCase.
+	param = broom.Parameter{
+		Name: "lastName",
+	}
+	got = param.Label()
+	want = "Last Name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestParameter_NameWithFlags(t *testing.T) {
+	param := broom.Parameter{
+		Name: "first_name",
+	}
+	got := param.NameWithFlags()
+	want := "first_name"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	param = broom.Parameter{
+		Name:     "first_name",
+		Required: true,
+	}
+	got = param.NameWithFlags()
+	want = "first_name (required)"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	param = broom.Parameter{
+		Name:       "first_name",
+		Deprecated: true,
+		Required:   true,
+	}
+	got = param.NameWithFlags()
+	want = "first_name (deprecated, required)"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
 	}
 }
