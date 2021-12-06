@@ -1,6 +1,6 @@
 export CGO_ENABLED=0
 VERSION := $(shell git describe --tags --always)
-BUILD_INFO := -X "main.Version=$(VERSION)"
+BUILD_INFO := -X "github.com/bojanz/broom.Version=$(VERSION)"
 FLAGS := -tags='osusergo' -trimpath -ldflags='$(BUILD_INFO) -s -extldflags "-static"'
 
 build: clean

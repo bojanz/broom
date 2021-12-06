@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -118,6 +119,7 @@ func profileCmd(args []string) {
 		kv := strings.SplitN(header, ":", 2)
 		req.Header.Set(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
 	}
+	req.Header.Set("User-Agent", fmt.Sprintf("broom/%s (%s %s)", broom.Version, runtime.GOOS, runtime.GOARCH))
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

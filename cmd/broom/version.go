@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-)
 
-// Version is the current version, replaced at build time.
-var Version = "dev"
+	"github.com/bojanz/broom"
+)
 
 const versionDescription = `Display the Broom version`
 
 func versionCmd(args []string) {
-	fmt.Fprintf(os.Stdout, "broom %s %s/%s %s\n", Version, runtime.GOOS, runtime.GOARCH, runtime.Version())
+	fmt.Fprintf(os.Stdout, "broom %s %s/%s %s\n", broom.Version, runtime.GOOS, runtime.GOARCH, runtime.Version())
 }

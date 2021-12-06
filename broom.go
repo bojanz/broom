@@ -16,6 +16,9 @@ import (
 	"github.com/tidwall/pretty"
 )
 
+// Version is the current version, replaced at build time.
+var Version = "dev"
+
 // Result represents the result of executing an HTTP request.
 type Result struct {
 	StatusCode int
