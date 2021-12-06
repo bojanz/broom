@@ -182,7 +182,8 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range queryParams {
-			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
+			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
@@ -190,7 +191,8 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nHeader parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range headerParams {
-			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
+			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
@@ -198,7 +200,8 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nBody parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range bodyParams {
-			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
+			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
