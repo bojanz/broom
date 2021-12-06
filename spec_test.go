@@ -52,7 +52,7 @@ func TestLoadOperations(t *testing.T) {
 				broom.Parameter{
 					In:          "query",
 					Name:        "sort",
-					Description: "Allows sorting by a single field. Use a dash (\"-\") to sort descending.",
+					Description: "Allows sorting by a single field.\nUse a dash (\"-\") to sort descending.",
 					Type:        "string",
 					Default:     "created_at",
 				},

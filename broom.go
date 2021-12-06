@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"strings"
 
+	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/tidwall/pretty"
 )
 
@@ -84,6 +85,11 @@ func RetrieveToken(tokenCmd string) (string, error) {
 	token := strings.TrimSpace(string(output))
 
 	return token, nil
+}
+
+// Sanitize sanitizes the given string, stripping HTML and trailing newlines.
+func Sanitize(s string) string {
+	return strings.Trim(strip.StripTags(s), "\n")
 }
 
 // contains returns whether slice a contains x.

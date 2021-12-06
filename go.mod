@@ -6,6 +6,7 @@ require (
 	github.com/getkin/kin-openapi v0.78.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.6
+	github.com/grokify/html-strip-tags-go v0.0.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/rivo/tview v0.0.0-20211001102648-5508f4b00266
 	github.com/spf13/pflag v1.0.5

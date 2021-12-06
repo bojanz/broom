@@ -14,7 +14,7 @@ paths:
   /products:
     get:
       summary: List products
-      description: Retrieves a list of products matching the specified criteria.
+      description: Retrieves a list of <b>products</b> matching the specified criteria.
       operationId: list-products
       tags:
         - Products
@@ -38,7 +38,9 @@ paths:
             format: ulid
         - in: query
           name: sort
-          description: Allows sorting by a single field. Use a dash ("-") to sort descending.
+          description: |
+            Allows <b>sorting</b> by a single field.<br>
+            Use a dash ("-") to sort descending.
           schema:
             type: string
             default: created_at

@@ -106,7 +106,7 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 	op := Operation{
 		ID:          strcase.ToKebab(specOp.OperationID),
 		Summary:     specOp.Summary,
-		Description: specOp.Description,
+		Description: Sanitize(specOp.Description),
 		Method:      method,
 		Path:        path,
 		Deprecated:  specOp.Deprecated,
@@ -152,7 +152,7 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 				op.Parameters = append(op.Parameters, Parameter{
 					In:          "body",
 					Name:        name,
-					Description: schema.Value.Description,
+					Description: Sanitize(schema.Value.Description),
 					Type:        getSchemaType(*schema.Value),
 					Enum:        castEnum(schema.Value.Enum),
 					Default:     schema.Value.Default,
@@ -172,7 +172,7 @@ func newParameterFromSpec(specParam openapi3.Parameter) Parameter {
 	return Parameter{
 		In:          specParam.In,
 		Name:        specParam.Name,
-		Description: specParam.Description,
+		Description: Sanitize(specParam.Description),
 		Style:       specParam.Style,
 		Type:        getSchemaType(*specParam.Schema.Value),
 		Enum:        castEnum(specParam.Schema.Value.Enum),
