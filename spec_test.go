@@ -19,6 +19,12 @@ func TestLoadOperations(t *testing.T) {
 		Default:     nil,
 		Required:    true,
 	}
+	vendorParam := broom.Parameter{
+		In:          "header",
+		Name:        "X-Vendor",
+		Description: "The vendor.",
+		Type:        "string",
+	}
 	wantOps := broom.Operations{
 		broom.Operation{
 			ID:          "list-products",
@@ -28,26 +34,24 @@ func TestLoadOperations(t *testing.T) {
 			Method:      "GET",
 			Path:        "/products",
 			Parameters: broom.Parameters{
+				vendorParam,
 				broom.Parameter{
 					In:          "query",
 					Name:        "filter[owner_id]",
 					Description: "Allows filtering by owner_id.",
 					Type:        "string",
-					Default:     nil,
 				},
 				broom.Parameter{
 					In:          "query",
 					Name:        "page[before]",
 					Description: "Shows 50 products before the given ID.",
 					Type:        "string",
-					Default:     nil,
 				},
 				broom.Parameter{
 					In:          "query",
 					Name:        "page[after]",
 					Description: "Shows 50 products after the given ID.",
 					Type:        "string",
-					Default:     nil,
 				},
 				broom.Parameter{
 					In:          "query",
@@ -66,6 +70,7 @@ func TestLoadOperations(t *testing.T) {
 			Method:      "POST",
 			Path:        "/products",
 			Parameters: broom.Parameters{
+				vendorParam,
 				broom.Parameter{
 					In:          "body",
 					Name:        "currency_code",
@@ -88,7 +93,6 @@ func TestLoadOperations(t *testing.T) {
 					Name:        "owner_id",
 					Description: "ID of the owner. Defaults to the requester.",
 					Type:        "string",
-					Default:     nil,
 				},
 				broom.Parameter{
 					In:          "body",
@@ -122,7 +126,7 @@ func TestLoadOperations(t *testing.T) {
 			Tag:         "Products",
 			Method:      "GET",
 			Path:        "/products/{product_id}",
-			Parameters:  broom.Parameters{idParam},
+			Parameters:  broom.Parameters{idParam, vendorParam},
 		},
 		broom.Operation{
 			ID:          "update-product",
@@ -133,6 +137,7 @@ func TestLoadOperations(t *testing.T) {
 			Path:        "/products/{product_id}",
 			Parameters: broom.Parameters{
 				idParam,
+				vendorParam,
 				broom.Parameter{
 					In:          "body",
 					Name:        "currency_code",
@@ -178,7 +183,7 @@ func TestLoadOperations(t *testing.T) {
 			Tag:         "Products",
 			Method:      "DELETE",
 			Path:        "/products/{product_id}",
-			Parameters:  broom.Parameters{idParam},
+			Parameters:  broom.Parameters{idParam, vendorParam},
 		},
 	}
 

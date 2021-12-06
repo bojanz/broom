@@ -166,6 +166,7 @@ func operationUsage(operation broom.Operation, profile string) {
 		summary = fmt.Sprintf("%v (deprecated)", summary)
 	}
 	queryParams := operation.ParametersIn("query")
+	headerParams := operation.ParametersIn("header")
 	bodyParams := operation.ParametersIn("body")
 
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
@@ -181,6 +182,14 @@ func operationUsage(operation broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
 		for _, param := range queryParams {
+			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
+		}
+		w.Flush()
+	}
+	if len(headerParams) > 0 {
+		fmt.Fprintln(os.Stdout, "\nHeader parameters:")
+		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		for _, param := range headerParams {
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), param.Description)
 		}
 		w.Flush()

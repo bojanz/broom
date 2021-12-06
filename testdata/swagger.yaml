@@ -21,6 +21,10 @@ paths:
       tags:
         - Products
       parameters:
+        - in: header
+          name: X-Vendor
+          description: The vendor.
+          type: string
         - in: query
           name: filter[owner_id]
           description: Allows filtering by owner_id.
@@ -77,6 +81,10 @@ paths:
           schema:
             "$ref": "#/definitions/Error"
       parameters:
+        - in: header
+          name: X-Vendor
+          description: The vendor.
+          type: string
         - required: true
           name: body
           in: body
@@ -122,6 +130,10 @@ paths:
         description: The ID of the product.
         required: true
         format: ulid
+        type: string
+      - in: header
+        name: X-Vendor
+        description: The vendor.
         type: string
     get:
       summary: Get product

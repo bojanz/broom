@@ -19,6 +19,7 @@ paths:
       tags:
         - Products
       parameters:
+        - $ref: '#/components/parameters/Vendor'
         - in: query
           name: filter[owner_id]
           description: Allows filtering by owner_id.
@@ -70,6 +71,8 @@ paths:
       operationId: create-product
       tags:
         - Products
+      parameters:
+        - $ref: '#/components/parameters/Vendor'
       requestBody:
         required: true
         content:
@@ -120,6 +123,7 @@ paths:
   '/products/{product_id}':
     parameters:
       - $ref: '#/components/parameters/ProductID'
+      - $ref: '#/components/parameters/Vendor'
     get:
       summary: Get product
       description: Retrieves the specified product.
@@ -298,3 +302,9 @@ components:
       schema:
         type: string
         format: ulid
+    Vendor:
+      in: header
+      name: X-Vendor
+      description: The vendor.
+      schema:
+        type: string
