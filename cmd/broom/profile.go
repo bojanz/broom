@@ -30,7 +30,6 @@ func profileCmd(args []string) {
 		help    = flags.BoolP("help", "h", false, "Display this help text and exit")
 		body    = flags.StringP("body", "b", "", "Body string, containing one or more body parameters")
 		query   = flags.StringP("query", "q", "", "Query string, containing one or more query parameters")
-		token   = flags.StringP("token", "t", "", "Access token. Overrides the one from the profile")
 		verbose = flags.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
 	)
 	flags.Usage = func() {
@@ -92,15 +91,12 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	if *token == "" {
-		// No access token specified, take it from the profile.
-		*token = profileCfg.Token
-		if profileCfg.TokenCmd != "" {
-			*token, err = broom.RetrieveToken(profileCfg.TokenCmd)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Error:", err)
-				os.Exit(1)
-			}
+	token := profileCfg.Token
+	if profileCfg.TokenCmd != "" {
+		token, err = broom.RetrieveToken(profileCfg.TokenCmd)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
 		}
 	}
 
@@ -112,8 +108,8 @@ func profileCmd(args []string) {
 	if operation.HasBody() {
 		req.Header.Set("Content-Type", operation.BodyFormat)
 	}
-	if *token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", *token))
+	if token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 	}
 	for _, header := range *headers {
 		kv := strings.SplitN(header, ":", 2)

@@ -70,8 +70,7 @@ broom staging list-products
 
 ## Authentication
 
-An access token can be set on the profile (via `broom add --token`) or provided per-operation (via `broom --token`).
-This is the usual way of sending API keys.
+An access token can be set on the profile via `broom add --token`. This is the usual way of sending API keys.
 
 For more advanced use cases, Broom supports fetching an access token through an external command:
 ```
