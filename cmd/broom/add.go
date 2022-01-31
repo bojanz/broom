@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	flag "github.com/spf13/pflag"
-	"gopkg.in/yaml.v2"
 
 	"github.com/bojanz/broom"
 )
@@ -58,24 +57,16 @@ func addCmd(args []string) {
 		fmt.Fprintf(os.Stderr, "Error: can't name a profile %q, please choose a different name\n", profile)
 		os.Exit(1)
 	}
-	// Confirm that the spec file exists and contains valid JSON or YAML.
-	b, err := os.ReadFile(filename)
+	// Confirm that the specification exists and is valid.
+	// Then use it to determine config defaults.
+	spec, err := broom.LoadSpec(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	aux := struct {
-		Servers []struct {
-			URL string `yaml:"url"`
-		} `yaml:"servers"`
-	}{}
-	if err := yaml.Unmarshal(b, &aux); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: could not decode %v: %v\n", filename, err)
-		os.Exit(1)
-	}
 	var specServerURL string
-	if len(aux.Servers) > 0 {
-		specServerURL = aux.Servers[0].URL
+	if len(spec.Servers) > 0 {
+		specServerURL = spec.Servers[0].URL
 	}
 	if *serverURL == "" {
 		*serverURL = specServerURL

@@ -21,7 +21,7 @@ import (
 
 // LoadOperations loads available operations from a specification on disk.
 func LoadOperations(filename string) (Operations, error) {
-	spec, err := loadSpec(filename)
+	spec, err := LoadSpec(filename)
 	if err != nil {
 		return nil, fmt.Errorf("load spec: %w", err)
 	}
@@ -63,8 +63,8 @@ func LoadOperations(filename string) (Operations, error) {
 	return operations, nil
 }
 
-// loadSpec loads an OpenAPI 2.0/3.0 specification from disk.
-func loadSpec(filename string) (*openapi3.T, error) {
+// LoadSpec loads an OpenAPI 2.0/3.0 specification from disk.
+func LoadSpec(filename string) (*openapi3.T, error) {
 	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
 	openapi3.DefineStringFormat("ulid", `^[0-7]{1}[0-9A-HJKMNP-TV-Z]{25}$`)
 	openapi3.SchemaFormatValidationDisabled = true
