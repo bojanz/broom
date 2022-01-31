@@ -14,6 +14,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/iancoleman/strcase"
 	"github.com/rivo/tview"
 	flag "github.com/spf13/pflag"
@@ -217,6 +218,12 @@ func bodyForm(operation broom.Operation) (string, bool) {
 		canceled = true
 		app.Stop()
 	}
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlC {
+			cancelFunc()
+		}
+		return event
+	})
 	form.SetCancelFunc(cancelFunc)
 	form.SetBorder(true)
 	form.SetTitle(operation.Summary)

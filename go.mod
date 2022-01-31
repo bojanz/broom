@@ -3,6 +3,7 @@ module github.com/bojanz/broom
 go 1.17
 
 require (
+	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1
 	github.com/getkin/kin-openapi v0.85.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.5.6
@@ -16,7 +17,6 @@ require (
 
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
