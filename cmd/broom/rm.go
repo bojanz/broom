@@ -27,6 +27,7 @@ func rmCmd(args []string) {
 		fmt.Println(rmUsage)
 		flags.PrintDefaults()
 	}
+	flags.SortFlags = false
 	flags.Parse(args)
 	if flags.NArg() < 2 {
 		flags.Usage()

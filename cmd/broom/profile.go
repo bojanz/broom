@@ -27,8 +27,8 @@ const profileDescription = `List the profile's operations`
 func profileCmd(args []string) {
 	flags := flag.NewFlagSet("profile", flag.ExitOnError)
 	var (
-		headers = flags.StringArrayP("header", "H", nil, "Header. Can be used multiple times")
 		help    = flags.BoolP("help", "h", false, "Display this help text and exit")
+		headers = flags.StringArrayP("header", "H", nil, "Header. Can be used multiple times")
 		body    = flags.StringP("body", "b", "", "Body string, containing one or more body parameters")
 		query   = flags.StringP("query", "q", "", "Query string, containing one or more query parameters")
 		verbose = flags.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
@@ -36,6 +36,7 @@ func profileCmd(args []string) {
 	flags.Usage = func() {
 		flags.PrintDefaults()
 	}
+	flags.SortFlags = false
 	flags.Parse(args)
 
 	profile := flags.Arg(0)

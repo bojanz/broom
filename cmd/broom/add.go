@@ -44,6 +44,7 @@ func addCmd(args []string) {
 		fmt.Println(addUsage)
 		flags.PrintDefaults()
 	}
+	flags.SortFlags = false
 	flags.Parse(args)
 	if flags.NArg() < 3 {
 		flags.Usage()
