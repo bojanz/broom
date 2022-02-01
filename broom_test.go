@@ -4,10 +4,81 @@
 package broom_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/bojanz/broom"
 )
+
+func TestAuthorize(t *testing.T) {
+	// No credentials.
+	req, _ := http.NewRequest("GET", "/test", nil)
+	err := broom.Authorize(req, broom.AuthConfig{})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// API key.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials: "MYKEY",
+		Type:        "api-key",
+	})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	got := req.Header.Get("X-API-Key")
+	want := "MYKEY"
+	if got != want {
+		t.Errorf(`got %q, want %q`, got, want)
+	}
+
+	// API key, custom header.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials:  "MYKEY",
+		Type:         "api-key",
+		APIKeyHeader: "X-MyApp-Key",
+	})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	got = req.Header.Get("X-MyApp-Key")
+	want = "MYKEY"
+	if got != want {
+		t.Errorf(`got %q, want %q`, got, want)
+	}
+
+	// Basic auth.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials: "myuser:mypass",
+		Type:        "basic",
+	})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	got = req.Header.Get("Authorization")
+	want = "Basic bXl1c2VyOm15cGFzcw=="
+	if got != want {
+		t.Errorf(`got %q, want %q`, got, want)
+	}
+
+	// Bearer auth.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials: "MYKEY",
+		Type:        "bearer",
+	})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	got = req.Header.Get("Authorization")
+	want = "Bearer MYKEY"
+	if got != want {
+		t.Errorf(`got %q, want %q`, got, want)
+	}
+}
 
 func TestIsJSON(t *testing.T) {
 	tests := []struct {

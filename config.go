@@ -27,10 +27,17 @@ func (c Config) Profiles() []string {
 
 // ProfileConfig represents Broom's per-profile configuration.
 type ProfileConfig struct {
-	SpecFile  string `yaml:"spec_file"`
-	ServerURL string `yaml:"server_url"`
-	Token     string `yaml:"token"`
-	TokenCmd  string `yaml:"token_cmd"`
+	SpecFile  string     `yaml:"spec_file"`
+	ServerURL string     `yaml:"server_url"`
+	Auth      AuthConfig `yaml:"auth"`
+}
+
+// AuthConfig represents a profile's authentication configuration.
+type AuthConfig struct {
+	Credentials  string `yaml:"credentials"`
+	Command      string `yaml:"command"`
+	Type         string `yaml:"type"`
+	APIKeyHeader string `yaml:"api_key_header"`
 }
 
 // ReadConfig reads a config file with the given filename.

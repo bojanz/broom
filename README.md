@@ -60,8 +60,8 @@ Each profile has its own server url and authentication settings.
 
 ```bash
 cd my-project/
-broom add prod openapi.json --token=PRODUCTION_KEY
-broom add staging openapi.json --token=STAGING_KEY --server-url=htts://staging.my-api.io
+broom add prod openapi.json --auth=PRODUCTION_KEY --auth-type=api-key
+broom add staging openapi.json --auth=STAGING_KEY --auth-type=api-key --server-url=htts://staging.my-api.io
 
 # Proceed as usual.
 broom prod list-products
@@ -70,18 +70,35 @@ broom staging list-products
 
 ## Authentication
 
-An access token can be set on the profile via `broom add --token`. This is the usual way of sending API keys.
+Broom supports authenticating using an API key, Basic auth, or a Bearer token.
 
-For more advanced use cases, Broom supports fetching an access token through an external command:
+Using an API key (X-API-Key header):
 ```
-    broom add api openapi.json --token-cmd="sh get-token.sh"
+broom add api openapi.json --auth=MYKEY --auth-type=api-key
+```
+
+Using an API key (custom header):
+```
+broom add api openapi.json --auth=MYKEY --auth-type=api-key --api-key-header="X-MyApp-Key"
+```
+
+Using Basic auth:
+```
+broom add api openapi.json --auth="username:password" --auth-type=basic
+```
+
+Using a Bearer token:
+```
+broom add api openapi.json --auth=MYKEY --auth-type=bearer
+```
+
+For more advanced use cases, Broom supports fetching credentials through an external command:
+```
+    broom add api openapi.json --auth-cmd="sh get-token.sh" --auth-type=bearer
 ```
 
 The external command can do a 2-legged OAuth request via curl, or it can retrieve an API key from a vault.
 It is run before each request to ensure freshness.
-
-Note: Access tokens are currently always sent in an "Authorization: Bearer" header. The OpenAPI spec allows
-specifying which header to use (e.g. "X-API-Key"), Broom should support that at some point.
 
 ## Name
 

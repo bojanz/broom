@@ -93,31 +93,25 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	token := profileCfg.Token
-	if profileCfg.TokenCmd != "" {
-		token, err = broom.RetrieveToken(profileCfg.TokenCmd)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error:", err)
-			os.Exit(1)
-		}
-	}
 
 	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
+	if err = broom.Authorize(req, profileCfg.Auth); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
 	if operation.HasBody() {
 		req.Header.Set("Content-Type", operation.BodyFormat)
-	}
-	if token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 	}
 	for _, header := range *headers {
 		kv := strings.SplitN(header, ":", 2)
 		req.Header.Set(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
 	}
 	req.Header.Set("User-Agent", fmt.Sprintf("broom/%s (%s %s)", broom.Version, runtime.GOOS, runtime.GOARCH))
+
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

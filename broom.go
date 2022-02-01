@@ -5,6 +5,7 @@ package broom
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,6 +24,45 @@ var Version = "dev"
 type Result struct {
 	StatusCode int
 	Output     string
+}
+
+// Authorize acquires access credentials and sets them on the request.
+func Authorize(req *http.Request, cfg AuthConfig) error {
+	if cfg.Credentials == "" && cfg.Command == "" {
+		return nil
+	}
+	credentials := cfg.Credentials
+	if cfg.Command != "" {
+		var err error
+		credentials, err = RunCommand(cfg.Command)
+		if err != nil {
+			return fmt.Errorf("authorize: %w", err)
+		}
+		if credentials == "" {
+			return fmt.Errorf("authorize: run command: no credentials received")
+		}
+	}
+
+	switch cfg.Type {
+	case "bearer":
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", credentials))
+	case "basic":
+		credentials = base64.StdEncoding.EncodeToString([]byte(credentials))
+		req.Header.Set("Authorization", fmt.Sprintf("Basic %v", credentials))
+	case "api-key":
+		key := cfg.APIKeyHeader
+		if key == "" {
+			key = "X-API-Key"
+		}
+		req.Header.Set(key, credentials)
+	}
+
+	return nil
+}
+
+// AuthTypes returns a list of supported auth types.
+func AuthTypes() []string {
+	return []string{"bearer", "basic", "api-key"}
 }
 
 // Execute performs the given HTTP request and returns the result.
@@ -74,20 +114,22 @@ func PrettyJSON(json []byte) []byte {
 	return pretty.Color(pretty.Pretty(json), nil)
 }
 
-// RetrieveToken retrieves a token by running the given command.
-func RetrieveToken(tokenCmd string) (string, error) {
+// RunCommand runs the given command and returns its output.
+//
+// The command has access to environment variables.
+func RunCommand(command string) (string, error) {
 	errBuf := &bytes.Buffer{}
-	cmd := exec.Command("sh", "-c", tokenCmd)
+	cmd := exec.Command("sh", "-c", command)
 	cmd.Env = os.Environ()
 	cmd.Stderr = errBuf
-	output, err := cmd.Output()
+	b, err := cmd.Output()
 	if err != nil {
 		// The error is just a return code, which isn't useful.
-		return "", fmt.Errorf("retrieve token: %v", errBuf.String())
+		return "", fmt.Errorf("run command: %v", errBuf.String())
 	}
-	token := strings.TrimSpace(string(output))
+	output := bytes.TrimSpace(b)
 
-	return token, nil
+	return string(output), nil
 }
 
 // Sanitize sanitizes the given string, stripping HTML and trailing newlines.
