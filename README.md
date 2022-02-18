@@ -58,10 +58,12 @@ broom api create-product --help
 Broom allows creating multiple profiles for working with different environments, e.g. staging and production.
 Each profile has its own server url and authentication settings.
 
+The auth type, API key header, and server url are auto-detected from the OpenAPI spec, when not provided via options.
+
 ```bash
 cd my-project/
-broom add prod openapi.json --auth=PRODUCTION_KEY --auth-type=api-key
-broom add staging openapi.json --auth=STAGING_KEY --auth-type=api-key --server-url=htts://staging.my-api.io
+broom add prod openapi.json --auth=PRODUCTION_KEY
+broom add staging openapi.json --auth=STAGING_KEY --server-url=htts://staging.my-api.io
 
 # Proceed as usual.
 broom prod list-products
