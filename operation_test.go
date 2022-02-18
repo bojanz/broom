@@ -78,56 +78,6 @@ func TestOperations_Tags(t *testing.T) {
 	}
 }
 
-func TestOperation_ParametersIn(t *testing.T) {
-	op := broom.Operation{
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:   "path",
-				Name: "userId",
-			},
-			broom.Parameter{
-				In:   "path",
-				Name: "Id",
-			},
-			broom.Parameter{
-				In:   "query",
-				Name: "page",
-			},
-		},
-	}
-
-	gotParams := op.ParametersIn("path")
-	wantParams := broom.Parameters{
-		broom.Parameter{
-			In:   "path",
-			Name: "userId",
-		},
-		broom.Parameter{
-			In:   "path",
-			Name: "Id",
-		}}
-	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
-		t.Errorf("path parameter mismatch (-want +got):\n%s", diff)
-	}
-
-	gotParams = op.ParametersIn("query")
-	wantParams = broom.Parameters{
-		broom.Parameter{
-			In:   "query",
-			Name: "page",
-		},
-	}
-	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
-		t.Errorf("query parameter mismatch (-want +got):\n%s", diff)
-	}
-
-	gotParams = op.ParametersIn("body")
-	wantParams = broom.Parameters{}
-	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
-		t.Errorf("body parameter mismatch (-want +got):\n%s", diff)
-	}
-}
-
 func TestOperation_ProcessBody(t *testing.T) {
 	// Empty format.
 	op := broom.Operation{}
@@ -140,17 +90,13 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Unsupported format.
-	op = broom.Operation{
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:       "body",
-				Name:     "username",
-				Type:     "string",
-				Required: true,
-			},
-		},
-		BodyFormat: "application/xml",
-	}
+	op = broom.Operation{BodyFormat: "application/xml"}
+	op.Parameters.Add(broom.Parameter{
+		In:       "body",
+		Name:     "username",
+		Type:     "string",
+		Required: true,
+	})
 	b, err = op.ProcessBody("username=jsmith")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
@@ -173,16 +119,12 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Form data (application/x-www-form-urlencoded).
-	op = broom.Operation{
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:   "body",
-				Name: "username",
-				Type: "string",
-			},
-		},
-		BodyFormat: "application/x-www-form-urlencoded",
-	}
+	op = broom.Operation{BodyFormat: "application/x-www-form-urlencoded"}
+	op.Parameters.Add(broom.Parameter{
+		In:   "body",
+		Name: "username",
+		Type: "string",
+	})
 	// Non-defined parameters are expected to be passed through.
 	b, err = op.ProcessBody("email=js@domain&username=jsmith")
 	got := string(b)
@@ -195,41 +137,39 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// JSON data (application/json).
-	op = broom.Operation{
-		Parameters: broom.Parameters{
-			// Parameters without a type should remain strings.
-			broom.Parameter{
-				In:   "body",
-				Name: "username",
-			},
-			broom.Parameter{
-				In:   "body",
-				Name: "roles",
-				Type: "[]string",
-			},
-			broom.Parameter{
-				In:   "body",
-				Name: "lucky_numbers",
-				Type: "[]integer",
-			},
-			broom.Parameter{
-				In:   "body",
-				Name: "storage",
-				Type: "integer",
-			},
-			broom.Parameter{
-				In:   "body",
-				Name: "vcpu",
-				Type: "number",
-			},
-			broom.Parameter{
-				In:   "body",
-				Name: "status",
-				Type: "boolean",
-			},
+	// Parameters without a type should remain strings.
+	op = broom.Operation{BodyFormat: "application/json"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "body",
+			Name: "username",
 		},
-		BodyFormat: "application/json",
-	}
+		broom.Parameter{
+			In:   "body",
+			Name: "roles",
+			Type: "[]string",
+		},
+		broom.Parameter{
+			In:   "body",
+			Name: "lucky_numbers",
+			Type: "[]integer",
+		},
+		broom.Parameter{
+			In:   "body",
+			Name: "storage",
+			Type: "integer",
+		},
+		broom.Parameter{
+			In:   "body",
+			Name: "vcpu",
+			Type: "number",
+		},
+		broom.Parameter{
+			In:   "body",
+			Name: "status",
+			Type: "boolean",
+		},
+	)
 	// Invalid boolean.
 	b, err = op.ProcessBody("status=invalid")
 	if len(b) != 0 {
@@ -310,15 +250,11 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Missing path parameter.
-	op = broom.Operation{
-		Path: "/users/{userId}",
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:   "path",
-				Name: "userId",
-			},
-		},
-	}
+	op = broom.Operation{Path: "/users/{userId}"}
+	op.Parameters.Add(broom.Parameter{
+		In:   "path",
+		Name: "userId",
+	})
 	path, err = op.RealPath(nil, "")
 	if path != "" {
 		t.Errorf("unexpected path %v", path)
@@ -330,19 +266,17 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Provided path parameters.
-	op = broom.Operation{
-		Path: "/users/{userId}/orders/{orderId}",
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:   "path",
-				Name: "userId",
-			},
-			broom.Parameter{
-				In:   "path",
-				Name: "orderId",
-			},
+	op = broom.Operation{Path: "/users/{userId}/orders/{orderId}"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "path",
+			Name: "userId",
 		},
-	}
+		broom.Parameter{
+			In:   "path",
+			Name: "orderId",
+		},
+	)
 	path, err = op.RealPath([]string{"test-user", "123456"}, "")
 	if path != "/users/test-user/orders/123456" {
 		t.Errorf("got %v, want /users/test-user/orders/123456", path)
@@ -352,24 +286,22 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Path and query parameters.
-	op = broom.Operation{
-		Path: "/users/{userId}/orders",
-		Parameters: broom.Parameters{
-			broom.Parameter{
-				In:   "path",
-				Name: "userId",
-			},
-			broom.Parameter{
-				In:       "query",
-				Name:     "billing_country",
-				Required: true,
-			},
-			broom.Parameter{
-				In:   "query",
-				Name: "sort",
-			},
+	op = broom.Operation{Path: "/users/{userId}/orders"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "path",
+			Name: "userId",
 		},
-	}
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+		},
+	)
 	path, err = op.RealPath([]string{"test-user"}, "sort=-updated_at")
 	if path != "" {
 		t.Errorf("unexpected path %v", path)
@@ -400,7 +332,7 @@ func TestOperation_RealPath(t *testing.T) {
 }
 
 func TestParameters_ByName(t *testing.T) {
-	parameters := broom.Parameters{
+	parameters := broom.ParameterList{
 		broom.Parameter{
 			In:       "query",
 			Name:     "billing_country",
@@ -429,7 +361,7 @@ func TestParameters_ByName(t *testing.T) {
 }
 
 func TestParameters_Validate(t *testing.T) {
-	parameters := broom.Parameters{
+	parameters := broom.ParameterList{
 		broom.Parameter{
 			In:       "query",
 			Name:     "billing_country",

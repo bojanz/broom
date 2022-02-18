@@ -75,17 +75,6 @@ func (op Operation) HasBody() bool {
 	return op.BodyFormat != ""
 }
 
-// ParametersIn returns a list of parameters in the given location (query, path, body).
-func (op Operation) ParametersIn(in string) Parameters {
-	filteredParams := make(Parameters, 0, len(op.Parameters))
-	for _, param := range op.Parameters {
-		if param.In == in {
-			filteredParams = append(filteredParams, param)
-		}
-	}
-	return filteredParams
-}
-
 // ProcessBody converts the given body string into a byte array suitable for sending.
 func (op Operation) ProcessBody(body string) ([]byte, error) {
 	if !op.HasBody() {
@@ -96,8 +85,7 @@ func (op Operation) ProcessBody(body string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse body: %w", err)
 	}
-	bodyParams := op.ParametersIn("body")
-	if err := bodyParams.Validate(values); err != nil {
+	if err = op.Parameters.Body.Validate(values); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +94,7 @@ func (op Operation) ProcessBody(body string) ([]byte, error) {
 		for name := range values {
 			value := values.Get(name)
 			// Allow defined parameters to cast the string.
-			if bodyParam, ok := bodyParams.ByName(name); ok {
+			if bodyParam, ok := op.Parameters.Body.ByName(name); ok {
 				jsonValues[name], err = bodyParam.CastString(value)
 				if err != nil {
 					return nil, fmt.Errorf("could not process %v: %v", name, err)
@@ -127,14 +115,13 @@ func (op Operation) ProcessBody(body string) ([]byte, error) {
 
 // RealPath returns a path with the given path and query parameters included.
 func (op Operation) RealPath(pathValues []string, query string) (string, error) {
-	pathParams := op.ParametersIn("path")
-	nParams := len(pathParams)
+	nParams := len(op.Parameters.Path)
 	nValues := len(pathValues)
 	if nParams > nValues {
 		return "", fmt.Errorf("too few path parameters: got %v, want %v", nValues, nParams)
 	}
-	replace := make([]string, 0, len(pathParams)*2)
-	for i, param := range pathParams {
+	replace := make([]string, 0, len(op.Parameters.Path)*2)
+	for i, param := range op.Parameters.Path {
 		paramName := fmt.Sprintf("{%v}", param.Name)
 		replace = append(replace, paramName, pathValues[i])
 	}
@@ -145,8 +132,7 @@ func (op Operation) RealPath(pathValues []string, query string) (string, error) 
 		if err != nil {
 			return "", fmt.Errorf("parse query: %w", err)
 		}
-		queryParams := op.ParametersIn("query")
-		if err := queryParams.Validate(queryValues); err != nil {
+		if err := op.Parameters.Query.Validate(queryValues); err != nil {
 			return "", err
 		}
 		path = path + "?" + queryValues.Encode()
@@ -155,12 +141,36 @@ func (op Operation) RealPath(pathValues []string, query string) (string, error) 
 	return path, nil
 }
 
-// Parameters represents a list of parameters.
-type Parameters []Parameter
+// Parameters represents the operation's parameters.
+type Parameters struct {
+	Header ParameterList
+	Path   ParameterList
+	Query  ParameterList
+	Body   ParameterList
+}
+
+// Add adds one or more parameters to the appropriate parameter list.
+func (ps *Parameters) Add(params ...Parameter) {
+	for _, p := range params {
+		switch p.In {
+		case "header":
+			ps.Header = append(ps.Header, p)
+		case "path":
+			ps.Path = append(ps.Path, p)
+		case "query":
+			ps.Query = append(ps.Query, p)
+		case "body":
+			ps.Body = append(ps.Body, p)
+		}
+	}
+}
+
+// ParameterList represents a list of parameters.
+type ParameterList []Parameter
 
 // ByName returns a parameter with the given name.
-func (ps Parameters) ByName(name string) (Parameter, bool) {
-	for _, p := range ps {
+func (pl ParameterList) ByName(name string) (Parameter, bool) {
+	for _, p := range pl {
 		if p.Name == name {
 			return p, true
 		}
@@ -169,8 +179,8 @@ func (ps Parameters) ByName(name string) (Parameter, bool) {
 }
 
 // Validate validates each parameter against the given values.
-func (ps Parameters) Validate(values url.Values) error {
-	for _, p := range ps {
+func (pl ParameterList) Validate(values url.Values) error {
+	for _, p := range pl {
 		value := values.Get(p.Name)
 		if err := p.Validate(value); err != nil {
 			return err

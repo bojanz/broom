@@ -67,9 +67,8 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error: unknown operation", opID)
 		os.Exit(1)
 	}
-	pathParams := op.ParametersIn("path")
 	pathValues := flags.Args()[2:]
-	if *help || len(pathParams) > len(pathValues) {
+	if *help || len(op.Parameters.Path) > len(pathValues) {
 		operationUsage(op, profile)
 		flags.Usage()
 		return
@@ -150,7 +149,7 @@ func profileUsage(profile string, serverURL string, ops broom.Operations) {
 func operationUsage(op broom.Operation, profile string) {
 	sb := strings.Builder{}
 	sb.WriteString(op.ID)
-	for _, param := range op.ParametersIn("path") {
+	for _, param := range op.Parameters.Path {
 		sb.WriteString(" <")
 		sb.WriteString(strcase.ToSnake(param.Name))
 		sb.WriteString(">")
@@ -159,9 +158,6 @@ func operationUsage(op broom.Operation, profile string) {
 	if summary != "" && op.Deprecated {
 		summary = fmt.Sprintf("%v (deprecated)", summary)
 	}
-	queryParams := op.ParametersIn("query")
-	headerParams := op.ParametersIn("header")
-	bodyParams := op.ParametersIn("body")
 
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
 	if summary != "" {
@@ -172,28 +168,28 @@ func operationUsage(op broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "")
 		fmt.Fprintln(os.Stdout, op.Description)
 	}
-	if len(queryParams) > 0 {
+	if len(op.Parameters.Query) > 0 {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, param := range queryParams {
+		for _, param := range op.Parameters.Query {
 			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
-	if len(headerParams) > 0 {
+	if len(op.Parameters.Header) > 0 {
 		fmt.Fprintln(os.Stdout, "\nHeader parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, param := range headerParams {
+		for _, param := range op.Parameters.Header {
 			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
-	if len(bodyParams) > 0 {
+	if len(op.Parameters.Body) > 0 {
 		fmt.Fprintln(os.Stdout, "\nBody parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, param := range bodyParams {
+		for _, param := range op.Parameters.Body {
 			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
@@ -224,8 +220,7 @@ func bodyForm(op broom.Operation) (string, bool) {
 	form.SetTitle(op.Summary)
 	form.SetTitleAlign(tview.AlignLeft)
 
-	bodyParams := op.ParametersIn("body")
-	for _, param := range bodyParams {
+	for _, param := range op.Parameters.Body {
 		paramName := param.Name
 		paramLabel := param.Label()
 		if param.Required {
@@ -260,7 +255,7 @@ func bodyForm(op broom.Operation) (string, bool) {
 	}
 	form.AddButton("Submit", func() {
 		// Allow submit only if the input is valid.
-		err := bodyParams.Validate(values)
+		err := op.Parameters.Body.Validate(values)
 		if err == nil {
 			app.Stop()
 		}

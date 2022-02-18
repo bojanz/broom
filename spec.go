@@ -118,12 +118,11 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 		op.Tag = specOp.Tags[0]
 	}
 	// Parameters can be defined per-path or per-operation.
-	op.Parameters = make(Parameters, 0, len(params)+len(specOp.Parameters))
 	for _, param := range params {
-		op.Parameters = append(op.Parameters, newParameterFromSpec(*param.Value))
+		op.Parameters.Add(newParameterFromSpec(*param.Value))
 	}
 	for _, param := range specOp.Parameters {
-		op.Parameters = append(op.Parameters, newParameterFromSpec(*param.Value))
+		op.Parameters.Add(newParameterFromSpec(*param.Value))
 	}
 	if specOp.RequestBody != nil {
 		for format, mediaType := range specOp.RequestBody.Value.Content {
@@ -144,7 +143,7 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 					}
 				}
 
-				op.Parameters = append(op.Parameters, Parameter{
+				op.Parameters.Add(Parameter{
 					In:          "body",
 					Name:        name,
 					Description: Sanitize(schema.Value.Description),
