@@ -35,32 +35,27 @@ func LoadOperations(filename string) (Operations, error) {
 	}
 	sort.Strings(paths)
 
-	operations := Operations{}
+	ops := Operations{}
 	for _, path := range paths {
 		pathItem := spec.Paths[path]
 		if pathItem.Get != nil {
-			operation := newOperationFromSpec(http.MethodGet, path, pathItem.Parameters, *pathItem.Get)
-			operations = append(operations, operation)
+			ops = append(ops, newOperationFromSpec(http.MethodGet, path, pathItem.Parameters, *pathItem.Get))
 		}
 		if pathItem.Post != nil {
-			operation := newOperationFromSpec(http.MethodPost, path, pathItem.Parameters, *pathItem.Post)
-			operations = append(operations, operation)
+			ops = append(ops, newOperationFromSpec(http.MethodPost, path, pathItem.Parameters, *pathItem.Post))
 		}
 		if pathItem.Put != nil {
-			operation := newOperationFromSpec(http.MethodPut, path, pathItem.Parameters, *pathItem.Put)
-			operations = append(operations, operation)
+			ops = append(ops, newOperationFromSpec(http.MethodPut, path, pathItem.Parameters, *pathItem.Put))
 		}
 		if pathItem.Patch != nil {
-			operation := newOperationFromSpec(http.MethodPatch, path, pathItem.Parameters, *pathItem.Patch)
-			operations = append(operations, operation)
+			ops = append(ops, newOperationFromSpec(http.MethodPatch, path, pathItem.Parameters, *pathItem.Patch))
 		}
 		if pathItem.Delete != nil {
-			operation := newOperationFromSpec(http.MethodDelete, path, pathItem.Parameters, *pathItem.Delete)
-			operations = append(operations, operation)
+			ops = append(ops, newOperationFromSpec(http.MethodDelete, path, pathItem.Parameters, *pathItem.Delete))
 		}
 	}
 
-	return operations, nil
+	return ops, nil
 }
 
 // LoadSpec loads an OpenAPI 2.0/3.0 specification from disk.
@@ -122,7 +117,7 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 	if len(specOp.Tags) > 0 {
 		op.Tag = specOp.Tags[0]
 	}
-	// Parameters can be defined per-path or per-operation..
+	// Parameters can be defined per-path or per-operation.
 	op.Parameters = make(Parameters, 0, len(params)+len(specOp.Parameters))
 	for _, param := range params {
 		op.Parameters = append(op.Parameters, newParameterFromSpec(*param.Value))

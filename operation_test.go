@@ -12,29 +12,29 @@ import (
 )
 
 func TestOperations_ByID(t *testing.T) {
-	operations := broom.Operations{
+	ops := broom.Operations{
 		broom.Operation{ID: "create-user"},
 		broom.Operation{ID: "update-user"},
 	}
 
-	op1, ok := operations.ByID("update-user")
+	op1, ok := ops.ByID("update-user")
 	if op1.ID != "update-user" || ok != true {
 		t.Errorf("got %v, %v want update-user, true", op1.ID, ok)
 	}
 
-	op2, ok := operations.ByID("create-user")
+	op2, ok := ops.ByID("create-user")
 	if op2.ID != "create-user" || ok != true {
 		t.Errorf("got %v, %v want create-user, true", op2.ID, ok)
 	}
 
-	op3, ok := operations.ByID("delete-user")
+	op3, ok := ops.ByID("delete-user")
 	if op3.ID != "" || ok != false {
 		t.Errorf(`got %v, %v want "", false`, op1.ID, ok)
 	}
 }
 
 func TestOperations_ByTag(t *testing.T) {
-	operations := broom.Operations{
+	ops := broom.Operations{
 		broom.Operation{ID: "create-product", Tag: "Products"},
 		broom.Operation{ID: "update-product", Tag: "Products"},
 		broom.Operation{ID: "delete-product", Tag: "Products"},
@@ -42,7 +42,7 @@ func TestOperations_ByTag(t *testing.T) {
 		broom.Operation{ID: "update-user", Tag: "Users"},
 	}
 
-	gotOps := operations.ByTag("Products")
+	gotOps := ops.ByTag("Products")
 	wantOps := broom.Operations{
 		broom.Operation{ID: "create-product", Tag: "Products"},
 		broom.Operation{ID: "update-product", Tag: "Products"},
@@ -52,7 +52,7 @@ func TestOperations_ByTag(t *testing.T) {
 		t.Errorf("product operation mismatch (-want +got):\n%s", diff)
 	}
 
-	gotOps = operations.ByTag("Users")
+	gotOps = ops.ByTag("Users")
 	wantOps = broom.Operations{
 		broom.Operation{ID: "create-user", Tag: "Users"},
 		broom.Operation{ID: "update-user", Tag: "Users"},
@@ -63,7 +63,7 @@ func TestOperations_ByTag(t *testing.T) {
 }
 
 func TestOperations_Tags(t *testing.T) {
-	operations := broom.Operations{
+	ops := broom.Operations{
 		broom.Operation{ID: "create-product", Tag: "Products"},
 		broom.Operation{ID: "update-product", Tag: "Products"},
 		broom.Operation{ID: "delete-product", Tag: "Products"},
@@ -72,14 +72,14 @@ func TestOperations_Tags(t *testing.T) {
 	}
 
 	wantTags := []string{"Products", "Users"}
-	gotTags := operations.Tags()
+	gotTags := ops.Tags()
 	if !cmp.Equal(gotTags, wantTags) {
 		t.Errorf("got %v, want %v", gotTags, wantTags)
 	}
 }
 
 func TestOperation_ParametersIn(t *testing.T) {
-	operation := broom.Operation{
+	op := broom.Operation{
 		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "path",
@@ -96,7 +96,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 		},
 	}
 
-	gotParams := operation.ParametersIn("path")
+	gotParams := op.ParametersIn("path")
 	wantParams := broom.Parameters{
 		broom.Parameter{
 			In:   "path",
@@ -110,7 +110,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 		t.Errorf("path parameter mismatch (-want +got):\n%s", diff)
 	}
 
-	gotParams = operation.ParametersIn("query")
+	gotParams = op.ParametersIn("query")
 	wantParams = broom.Parameters{
 		broom.Parameter{
 			In:   "query",
@@ -121,7 +121,7 @@ func TestOperation_ParametersIn(t *testing.T) {
 		t.Errorf("query parameter mismatch (-want +got):\n%s", diff)
 	}
 
-	gotParams = operation.ParametersIn("body")
+	gotParams = op.ParametersIn("body")
 	wantParams = broom.Parameters{}
 	if diff := cmp.Diff(wantParams, gotParams); diff != "" {
 		t.Errorf("body parameter mismatch (-want +got):\n%s", diff)
@@ -130,8 +130,8 @@ func TestOperation_ParametersIn(t *testing.T) {
 
 func TestOperation_ProcessBody(t *testing.T) {
 	// Empty format.
-	operation := broom.Operation{}
-	b, err := operation.ProcessBody("username=jsmith")
+	op := broom.Operation{}
+	b, err := op.ProcessBody("username=jsmith")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -140,7 +140,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Unsupported format.
-	operation = broom.Operation{
+	op = broom.Operation{
 		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:       "body",
@@ -151,7 +151,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 		},
 		BodyFormat: "application/xml",
 	}
-	b, err = operation.ProcessBody("username=jsmith")
+	b, err = op.ProcessBody("username=jsmith")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -162,7 +162,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Missing required parameter.
-	b, err = operation.ProcessBody("")
+	b, err = op.ProcessBody("")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -173,7 +173,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Form data (application/x-www-form-urlencoded).
-	operation = broom.Operation{
+	op = broom.Operation{
 		Parameters: broom.Parameters{
 			broom.Parameter{
 				In:   "body",
@@ -184,7 +184,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 		BodyFormat: "application/x-www-form-urlencoded",
 	}
 	// Non-defined parameters are expected to be passed through.
-	b, err = operation.ProcessBody("email=js@domain&username=jsmith")
+	b, err = op.ProcessBody("email=js@domain&username=jsmith")
 	got := string(b)
 	want := "email=js%40domain&username=jsmith"
 	if got != want {
@@ -195,7 +195,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// JSON data (application/json).
-	operation = broom.Operation{
+	op = broom.Operation{
 		Parameters: broom.Parameters{
 			// Parameters without a type should remain strings.
 			broom.Parameter{
@@ -231,7 +231,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 		BodyFormat: "application/json",
 	}
 	// Invalid boolean.
-	b, err = operation.ProcessBody("status=invalid")
+	b, err = op.ProcessBody("status=invalid")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -242,7 +242,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid integer.
-	b, err = operation.ProcessBody("storage=3.2")
+	b, err = op.ProcessBody("storage=3.2")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -253,7 +253,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid integer in an array.
-	b, err = operation.ProcessBody("lucky_numbers=4,eight,15")
+	b, err = op.ProcessBody("lucky_numbers=4,eight,15")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -264,7 +264,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid number.
-	b, err = operation.ProcessBody("vcpu=1,7")
+	b, err = op.ProcessBody("vcpu=1,7")
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -275,7 +275,7 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Valid data.
-	b, err = operation.ProcessBody("email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	b, err = op.ProcessBody("email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
 	got = string(b)
 	// Note: keys are always alphabetical, due to how encoding/json treats maps.
 	want = `{"email":"js@domain","lucky_numbers":[4,8,15,16,23,42],"roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
@@ -289,10 +289,10 @@ func TestOperation_ProcessBody(t *testing.T) {
 
 func TestOperation_RealPath(t *testing.T) {
 	// No path parameters.
-	operation := broom.Operation{
+	op := broom.Operation{
 		Path: "/users",
 	}
-	path, err := operation.RealPath(nil, "")
+	path, err := op.RealPath(nil, "")
 	if path != "/users" {
 		t.Errorf("got %v, want /users", path)
 	}
@@ -301,7 +301,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// No path parameters, but one provided anyway.
-	path, err = operation.RealPath([]string{"ignore-me"}, "")
+	path, err = op.RealPath([]string{"ignore-me"}, "")
 	if path != "/users" {
 		t.Errorf("got %v, want /users", path)
 	}
@@ -310,7 +310,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Missing path parameter.
-	operation = broom.Operation{
+	op = broom.Operation{
 		Path: "/users/{userId}",
 		Parameters: broom.Parameters{
 			broom.Parameter{
@@ -319,7 +319,7 @@ func TestOperation_RealPath(t *testing.T) {
 			},
 		},
 	}
-	path, err = operation.RealPath(nil, "")
+	path, err = op.RealPath(nil, "")
 	if path != "" {
 		t.Errorf("unexpected path %v", path)
 	}
@@ -330,7 +330,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Provided path parameters.
-	operation = broom.Operation{
+	op = broom.Operation{
 		Path: "/users/{userId}/orders/{orderId}",
 		Parameters: broom.Parameters{
 			broom.Parameter{
@@ -343,7 +343,7 @@ func TestOperation_RealPath(t *testing.T) {
 			},
 		},
 	}
-	path, err = operation.RealPath([]string{"test-user", "123456"}, "")
+	path, err = op.RealPath([]string{"test-user", "123456"}, "")
 	if path != "/users/test-user/orders/123456" {
 		t.Errorf("got %v, want /users/test-user/orders/123456", path)
 	}
@@ -352,7 +352,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Path and query parameters.
-	operation = broom.Operation{
+	op = broom.Operation{
 		Path: "/users/{userId}/orders",
 		Parameters: broom.Parameters{
 			broom.Parameter{
@@ -370,7 +370,7 @@ func TestOperation_RealPath(t *testing.T) {
 			},
 		},
 	}
-	path, err = operation.RealPath([]string{"test-user"}, "sort=-updated_at")
+	path, err = op.RealPath([]string{"test-user"}, "sort=-updated_at")
 	if path != "" {
 		t.Errorf("unexpected path %v", path)
 	}
@@ -381,7 +381,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// One required, one non-defined query parameter.
-	path, err = operation.RealPath([]string{"test-user"}, "billing_country=US&billing_region=NY&sort=-updated_at")
+	path, err = op.RealPath([]string{"test-user"}, "billing_country=US&billing_region=NY&sort=-updated_at")
 	if path != "/users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at" {
 		t.Errorf("got %v, want /users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at", path)
 	}
@@ -390,7 +390,7 @@ func TestOperation_RealPath(t *testing.T) {
 	}
 
 	// Confirm that query parameters are escaped.
-	path, err = operation.RealPath([]string{"test-user"}, "billing_country=U S")
+	path, err = op.RealPath([]string{"test-user"}, "billing_country=U S")
 	if path != "/users/test-user/orders?billing_country=U+S" {
 		t.Errorf("got %v, want /users/test-user/orders?billing_country=U+S", path)
 	}

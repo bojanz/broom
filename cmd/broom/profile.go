@@ -50,51 +50,51 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error: unknown profile", profile)
 		os.Exit(1)
 	}
-	operations, err := broom.LoadOperations(profileCfg.SpecFile)
+	ops, err := broom.LoadOperations(profileCfg.SpecFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 	// No operation specified, list all of them.
 	if flags.NArg() < 2 {
-		profileUsage(profile, profileCfg.ServerURL, operations)
+		profileUsage(profile, profileCfg.ServerURL, ops)
 		return
 	}
 
-	operationID := flags.Arg(1)
-	operation, ok := operations.ByID(operationID)
+	opID := flags.Arg(1)
+	op, ok := ops.ByID(opID)
 	if !ok {
-		fmt.Fprintln(os.Stderr, "Error: unknown operation", operationID)
+		fmt.Fprintln(os.Stderr, "Error: unknown operation", opID)
 		os.Exit(1)
 	}
-	pathParams := operation.ParametersIn("path")
+	pathParams := op.ParametersIn("path")
 	pathValues := flags.Args()[2:]
 	if *help || len(pathParams) > len(pathValues) {
-		operationUsage(operation, profile)
+		operationUsage(op, profile)
 		flags.Usage()
 		return
 	}
-	path, err := operation.RealPath(pathValues, *query)
+	path, err := op.RealPath(pathValues, *query)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 	// The operation has a body, but no body string was provided.
-	// Launch the terminal UI to collect values.
-	if *body == "" && operation.HasBody() {
+	// Launch the terminal UI to collect body values.
+	if *body == "" && op.HasBody() {
 		var canceled bool
-		*body, canceled = bodyForm(operation)
+		*body, canceled = bodyForm(op)
 		if canceled {
 			os.Exit(0)
 		}
 	}
-	bodyBytes, err := operation.ProcessBody(*body)
+	bodyBytes, err := op.ProcessBody(*body)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 
-	req, err := http.NewRequest(operation.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequest(op.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
@@ -103,8 +103,8 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	if operation.HasBody() {
-		req.Header.Set("Content-Type", operation.BodyFormat)
+	if op.HasBody() {
+		req.Header.Set("Content-Type", op.BodyFormat)
 	}
 	for _, header := range *headers {
 		kv := strings.SplitN(header, ":", 2)
@@ -125,20 +125,20 @@ func profileCmd(args []string) {
 }
 
 // profileUsage prints Broom usage for a single profile.
-func profileUsage(profile string, serverURL string, operations broom.Operations) {
+func profileUsage(profile string, serverURL string, ops broom.Operations) {
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, "<operation>")
 	fmt.Fprintln(os.Stdout, "\nRuns the specified operation on", serverURL)
-	if len(operations) > 0 {
+	if len(ops) > 0 {
 		fmt.Fprintln(os.Stdout, "\nOperations:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, tag := range operations.Tags() {
+		for _, tag := range ops.Tags() {
 			fmt.Fprintf(w, "\t%v\t\t\n", tag)
-			for _, operation := range operations.ByTag(tag) {
-				operationID := operation.ID
-				if operation.Deprecated {
-					operationID = fmt.Sprintf("%v (deprecated)", operationID)
+			for _, op := range ops.ByTag(tag) {
+				opID := op.ID
+				if op.Deprecated {
+					opID = fmt.Sprintf("%v (deprecated)", opID)
 				}
-				fmt.Fprintf(w, "\t    %v\t%v\n", operationID, operation.Summary)
+				fmt.Fprintf(w, "\t    %v\t%v\n", opID, op.Summary)
 			}
 		}
 		w.Flush()
@@ -147,30 +147,30 @@ func profileUsage(profile string, serverURL string, operations broom.Operations)
 }
 
 // operationUsage prints Broom usage for a single operation.
-func operationUsage(operation broom.Operation, profile string) {
+func operationUsage(op broom.Operation, profile string) {
 	sb := strings.Builder{}
-	sb.WriteString(operation.ID)
-	for _, param := range operation.ParametersIn("path") {
+	sb.WriteString(op.ID)
+	for _, param := range op.ParametersIn("path") {
 		sb.WriteString(" <")
 		sb.WriteString(strcase.ToSnake(param.Name))
 		sb.WriteString(">")
 	}
-	summary := operation.Summary
-	if summary != "" && operation.Deprecated {
+	summary := op.Summary
+	if summary != "" && op.Deprecated {
 		summary = fmt.Sprintf("%v (deprecated)", summary)
 	}
-	queryParams := operation.ParametersIn("query")
-	headerParams := operation.ParametersIn("header")
-	bodyParams := operation.ParametersIn("body")
+	queryParams := op.ParametersIn("query")
+	headerParams := op.ParametersIn("header")
+	bodyParams := op.ParametersIn("body")
 
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
 	if summary != "" {
 		fmt.Fprintln(os.Stdout, "")
 		fmt.Fprintln(os.Stdout, summary)
 	}
-	if operation.Description != "" {
+	if op.Description != "" {
 		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, operation.Description)
+		fmt.Fprintln(os.Stdout, op.Description)
 	}
 	if len(queryParams) > 0 {
 		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
@@ -203,7 +203,7 @@ func operationUsage(operation broom.Operation, profile string) {
 }
 
 // bodyForm renders a form for entering body parameters.
-func bodyForm(operation broom.Operation) (string, bool) {
+func bodyForm(op broom.Operation) (string, bool) {
 	values := url.Values{}
 	canceled := false
 	app := tview.NewApplication()
@@ -221,10 +221,10 @@ func bodyForm(operation broom.Operation) (string, bool) {
 	})
 	form.SetCancelFunc(cancelFunc)
 	form.SetBorder(true)
-	form.SetTitle(operation.Summary)
+	form.SetTitle(op.Summary)
 	form.SetTitleAlign(tview.AlignLeft)
 
-	bodyParams := operation.ParametersIn("body")
+	bodyParams := op.ParametersIn("body")
 	for _, param := range bodyParams {
 		paramName := param.Name
 		paramLabel := param.Label()
