@@ -27,8 +27,8 @@ type Result struct {
 	Output     string
 }
 
-// Authorize acquires access credentials and sets them on the request.
-func Authorize(req *http.Request, cfg AuthConfig) error {
+// Authenticate authenticates the given request.
+func Authenticate(req *http.Request, cfg AuthConfig) error {
 	if cfg.Credentials == "" && cfg.Command == "" {
 		return nil
 	}
@@ -65,7 +65,7 @@ func Authorize(req *http.Request, cfg AuthConfig) error {
 	return nil
 }
 
-// AuthTypes returns a list of supported auth types.
+// AuthTypes returns a list of supported authentication types.
 func AuthTypes() []string {
 	return []string{"bearer", "basic", "api-key"}
 }

@@ -98,8 +98,8 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
-	if err = broom.Authorize(req, profileCfg.Auth); err != nil {
-		fmt.Fprintln(os.Stderr, "Error: authorize:", err)
+	if err = broom.Authenticate(req, profileCfg.Auth); err != nil {
+		fmt.Fprintln(os.Stderr, "Error: authenticate:", err)
 		os.Exit(1)
 	}
 	if op.HasBody() {

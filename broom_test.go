@@ -10,21 +10,21 @@ import (
 	"github.com/bojanz/broom"
 )
 
-func TestAuthorize(t *testing.T) {
+func TestAuthenticate(t *testing.T) {
 	// No credentials.
 	req, _ := http.NewRequest("GET", "/test", nil)
-	err := broom.Authorize(req, broom.AuthConfig{})
+	err := broom.Authenticate(req, broom.AuthConfig{})
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
 
 	// Empty type.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials: "MYKEY",
 	})
 	if err == nil {
-		t.Error("expected Authorize() to return an error")
+		t.Error("expected Authenticate() to return an error")
 	}
 	want := "auth type not specified"
 	if err.Error() != want {
@@ -33,12 +33,12 @@ func TestAuthorize(t *testing.T) {
 
 	// Invalid type.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials: "MYKEY",
 		Type:        "apikey",
 	})
 	if err == nil {
-		t.Error("expected Authorize() to return an error")
+		t.Error("expected Authenticate() to return an error")
 	}
 	want = `unrecognized auth type "apikey"`
 	if err.Error() != want {
@@ -47,7 +47,7 @@ func TestAuthorize(t *testing.T) {
 
 	// API key.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials: "MYKEY",
 		Type:        "api-key",
 	})
@@ -62,7 +62,7 @@ func TestAuthorize(t *testing.T) {
 
 	// API key, custom header.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials:  "MYKEY",
 		Type:         "api-key",
 		APIKeyHeader: "X-MyApp-Key",
@@ -78,7 +78,7 @@ func TestAuthorize(t *testing.T) {
 
 	// Basic auth.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials: "myuser:mypass",
 		Type:        "basic",
 	})
@@ -93,7 +93,7 @@ func TestAuthorize(t *testing.T) {
 
 	// Bearer auth.
 	req, _ = http.NewRequest("GET", "/test", nil)
-	err = broom.Authorize(req, broom.AuthConfig{
+	err = broom.Authenticate(req, broom.AuthConfig{
 		Credentials: "MYKEY",
 		Type:        "bearer",
 	})

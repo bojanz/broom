@@ -44,7 +44,7 @@ func addCmd(args []string) {
 	flags := flag.NewFlagSet("add", flag.ExitOnError)
 	var (
 		_               = flags.BoolP("help", "h", false, "Display this help text and exit")
-		authCredentials = flags.String("auth", "", "Auth credentials (e.g. access token or API key). Used to authorize every request")
+		authCredentials = flags.String("auth", "", "Auth credentials (e.g. access token or API key). Used to authenticate every request")
 		authCommand     = flags.String("auth-cmd", "", "Auth command. Executed on every request to retrieve auth credentials")
 		authType        = flags.String("auth-type", "", fmt.Sprintf("Auth type. One of: %v. Defaults to %v", strings.Join(authTypes, ", "), authTypes[0]))
 		apiKeyHeader    = flags.String("api-key-header", "", "API key header. Defaults to X-API-Key")
