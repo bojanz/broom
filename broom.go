@@ -6,6 +6,7 @@ package broom
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,10 +37,10 @@ func Authorize(req *http.Request, cfg AuthConfig) error {
 		var err error
 		credentials, err = RunCommand(cfg.Command)
 		if err != nil {
-			return fmt.Errorf("authorize: %w", err)
+			return fmt.Errorf("run command: %w", err)
 		}
 		if credentials == "" {
-			return fmt.Errorf("authorize: run command: no credentials received")
+			return fmt.Errorf("run command: no credentials received")
 		}
 	}
 
@@ -55,6 +56,10 @@ func Authorize(req *http.Request, cfg AuthConfig) error {
 			key = "X-API-Key"
 		}
 		req.Header.Set(key, credentials)
+	case "":
+		return errors.New("auth type not specified")
+	default:
+		return fmt.Errorf("unrecognized auth type %q", cfg.Type)
 	}
 
 	return nil
@@ -125,7 +130,7 @@ func RunCommand(command string) (string, error) {
 	b, err := cmd.Output()
 	if err != nil {
 		// The error is just a return code, which isn't useful.
-		return "", fmt.Errorf("run command: %v", errBuf.String())
+		return "", errors.New(errBuf.String())
 	}
 	output := bytes.TrimSpace(b)
 

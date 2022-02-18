@@ -18,6 +18,33 @@ func TestAuthorize(t *testing.T) {
 		t.Errorf("unexpected error %v", err)
 	}
 
+	// Empty type.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials: "MYKEY",
+	})
+	if err == nil {
+		t.Error("expected Authorize() to return an error")
+	}
+	want := "auth type not specified"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+
+	// Invalid type.
+	req, _ = http.NewRequest("GET", "/test", nil)
+	err = broom.Authorize(req, broom.AuthConfig{
+		Credentials: "MYKEY",
+		Type:        "apikey",
+	})
+	if err == nil {
+		t.Error("expected Authorize() to return an error")
+	}
+	want = `unrecognized auth type "apikey"`
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+
 	// API key.
 	req, _ = http.NewRequest("GET", "/test", nil)
 	err = broom.Authorize(req, broom.AuthConfig{
@@ -28,7 +55,7 @@ func TestAuthorize(t *testing.T) {
 		t.Errorf("unexpected error %v", err)
 	}
 	got := req.Header.Get("X-API-Key")
-	want := "MYKEY"
+	want = "MYKEY"
 	if got != want {
 		t.Errorf(`got %q, want %q`, got, want)
 	}

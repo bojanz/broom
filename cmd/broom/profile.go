@@ -99,7 +99,7 @@ func profileCmd(args []string) {
 		os.Exit(1)
 	}
 	if err = broom.Authorize(req, profileCfg.Auth); err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
+		fmt.Fprintln(os.Stderr, "Error: authorize:", err)
 		os.Exit(1)
 	}
 	if op.HasBody() {
