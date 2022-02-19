@@ -133,11 +133,7 @@ func profileUsage(profile string, serverURL string, ops broom.Operations) {
 		for _, tag := range ops.Tags() {
 			fmt.Fprintf(w, "\t%v\t\t\n", tag)
 			for _, op := range ops.ByTag(tag) {
-				opID := op.ID
-				if op.Deprecated {
-					opID = fmt.Sprintf("%v (deprecated)", opID)
-				}
-				fmt.Fprintf(w, "\t    %v\t%v\n", opID, op.Summary)
+				fmt.Fprintf(w, "\t    %v\t%v\n", op.ID, op.SummaryWithFlags())
 			}
 		}
 		w.Flush()
@@ -154,13 +150,9 @@ func operationUsage(op broom.Operation, profile string) {
 		sb.WriteString(strcase.ToSnake(param.Name))
 		sb.WriteString(">")
 	}
-	summary := op.Summary
-	if summary != "" && op.Deprecated {
-		summary = fmt.Sprintf("%v (deprecated)", summary)
-	}
 
 	fmt.Fprintln(os.Stdout, "Usage: broom", profile, sb.String())
-	if summary != "" {
+	if summary := op.SummaryWithFlags(); summary != "" {
 		fmt.Fprintln(os.Stdout, "")
 		fmt.Fprintln(os.Stdout, summary)
 	}

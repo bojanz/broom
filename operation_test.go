@@ -78,6 +78,27 @@ func TestOperations_Tags(t *testing.T) {
 	}
 }
 
+func TestOperation_SummaryWithFlags(t *testing.T) {
+	op := broom.Operation{
+		Summary: "List products",
+	}
+	got := op.SummaryWithFlags()
+	want := "List products"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+
+	op = broom.Operation{
+		Summary:    "List products",
+		Deprecated: true,
+	}
+	got = op.SummaryWithFlags()
+	want = "List products (deprecated)"
+	if got != want {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestOperation_ProcessBody(t *testing.T) {
 	// Empty format.
 	op := broom.Operation{}

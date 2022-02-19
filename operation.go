@@ -69,6 +69,16 @@ type Operation struct {
 	Deprecated  bool
 }
 
+// SummaryWithFlags returns the operation summary with flags.
+func (op Operation) SummaryWithFlags() string {
+	summary := op.Summary
+	if op.Deprecated {
+		summary = fmt.Sprintf("%v (deprecated)", summary)
+	}
+
+	return summary
+}
+
 // HasBody returns whether the operation has a body.
 func (op Operation) HasBody() bool {
 	// Body params are keyed by format in the spec, so there's no need to check both.
