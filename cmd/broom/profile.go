@@ -160,19 +160,19 @@ func operationUsage(op broom.Operation, profile string) {
 		fmt.Fprintln(os.Stdout, "")
 		fmt.Fprintln(os.Stdout, op.Description)
 	}
-	if len(op.Parameters.Query) > 0 {
-		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
+	if len(op.Parameters.Header) > 0 {
+		fmt.Fprintln(os.Stdout, "\nHeader parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, param := range op.Parameters.Query {
+		for _, param := range op.Parameters.Header {
 			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
 		w.Flush()
 	}
-	if len(op.Parameters.Header) > 0 {
-		fmt.Fprintln(os.Stdout, "\nHeader parameters:")
+	if len(op.Parameters.Query) > 0 {
+		fmt.Fprintln(os.Stdout, "\nQuery parameters:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
-		for _, param := range op.Parameters.Header {
+		for _, param := range op.Parameters.Query {
 			description := strings.ReplaceAll(param.Description, "\n", "\n\t\t")
 			fmt.Fprintf(w, "\t%v\t%v\n", param.NameWithFlags(), description)
 		}
