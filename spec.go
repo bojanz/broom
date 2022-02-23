@@ -87,7 +87,9 @@ func LoadSpec(filename string) (*openapi3.T, error) {
 			return nil, fmt.Errorf("v2 to v3: %w", err)
 		}
 	} else {
-		spec, err = openapi3.NewLoader().LoadFromData(b)
+		loader := openapi3.NewLoader()
+		loader.IsExternalRefsAllowed = true
+		spec, err = loader.LoadFromData(b)
 		if err != nil {
 			return nil, fmt.Errorf("v3: %w", err)
 		}
