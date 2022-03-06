@@ -36,7 +36,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go: ['1.16', '1.17']
+        go: ['1.17']
     name: test @ Go ${{ matrix.go }}
     runs-on: ubuntu-latest
     steps:
