@@ -4,7 +4,10 @@
 package broom_test
 
 import (
+	"io"
+	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/bojanz/broom"
@@ -99,10 +102,173 @@ func TestOperation_SummaryWithFlags(t *testing.T) {
 	}
 }
 
-func TestOperation_ProcessBody(t *testing.T) {
+func TestOperation_Validate(t *testing.T) {
+	// Missing path parameter.
+	op := broom.Operation{Path: "/users/{userId}"}
+	op.Parameters.Add(broom.Parameter{
+		In:   "path",
+		Name: "userId",
+	})
+	err := op.Validate(broom.RequestValues{})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != "too few path parameters: got 0, want 1" {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Missing query parameter.
+	op = broom.Operation{Path: "/users/{userId}/orders"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+	)
+	err = op.Validate(broom.RequestValues{})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required query parameter "billing_country"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Missing body parameter.
+	op = broom.Operation{BodyFormat: "application/json"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:       "body",
+			Name:     "username",
+			Required: true,
+		},
+	)
+	err = op.Validate(broom.RequestValues{})
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `missing required body parameter "username"` {
+		t.Errorf("unexpected error %v", err)
+	}
+}
+
+func TestOperation_Request(t *testing.T) {
+	// No path parameters.
+	op := broom.Operation{Method: "GET", Path: "/users"}
+	req, err := op.Request("https://myapi.io", broom.RequestValues{})
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users" {
+		t.Errorf("got %v, want https://myapi.io/users", req.URL.String())
+	}
+
+	// No path parameters, but one provided anyway.
+	values, _ := broom.ParseRequestValues(nil, []string{"ignore-me"}, "", "")
+	req, err = op.Request("https://myapi.io", values)
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users" {
+		t.Errorf("got %v, want https://myapi.io/users", req.URL.String())
+	}
+
+	// Provided path parameters.
+	op = broom.Operation{Method: "GET", Path: "/users/{userId}/orders/{orderId}"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "path",
+			Name: "userId",
+		},
+		broom.Parameter{
+			In:   "path",
+			Name: "orderId",
+		},
+	)
+	values, _ = broom.ParseRequestValues(nil, []string{"test-user", "123456"}, "", "")
+	req, err = op.Request("https://myapi.io", values)
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users/test-user/orders/123456" {
+		t.Errorf("got %v, want https://myapi.io/users/test-user/orders/123456", req.URL.String())
+	}
+
+	// One required, one non-defined query parameter.
+	op = broom.Operation{Method: "GET", Path: "/users/{userId}/orders"}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "path",
+			Name: "userId",
+		},
+		broom.Parameter{
+			In:       "query",
+			Name:     "billing_country",
+			Required: true,
+		},
+		broom.Parameter{
+			In:   "query",
+			Name: "sort",
+		},
+	)
+	values, _ = broom.ParseRequestValues(nil, []string{"test-user"}, "billing_country=US&billing_region=NY&sort=-updated_at", "")
+	req, err = op.Request("https://myapi.io", values)
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at" {
+		t.Errorf("got %v, want https://myapi.io/users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at", req.URL.String())
+	}
+
+	// Confirm that query parameters are escaped.
+	values, _ = broom.ParseRequestValues(nil, []string{"test-user"}, "billing_country=U S", "")
+	req, err = op.Request("https://myapi.io", values)
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users/test-user/orders?billing_country=U+S" {
+		t.Errorf("got %v, want https://myapi.io/users/test-user/orders?billing_country=U+S", req.URL.String())
+	}
+
+	// Confirm that the expected headers are set.
+	op = broom.Operation{Method: "GET", Path: "/users"}
+	values, _ = broom.ParseRequestValues([]string{"X-Vendor: Test"}, nil, "", "")
+	req, err = op.Request("https://myapi.io", values)
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	if req.Method != "GET" {
+		t.Errorf("got %v, want GET", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users" {
+		t.Errorf("got %v, want https://myapi.io/users", req.URL.String())
+	}
+	if req.Header.Get("X-Vendor") != "Test" {
+		t.Errorf("got %v, want Test", req.Header.Get("X-Vendor"))
+	}
+	if ua := req.Header.Get("User-Agent"); !strings.HasPrefix(ua, "broom") {
+		t.Errorf("unexpected user agent %v", req.Header.Get("User-Agent"))
+	}
+}
+
+func TestOperation_RequestWithBody(t *testing.T) {
 	// Empty format.
-	op := broom.Operation{}
-	b, err := op.ProcessBody("username=jsmith")
+	op := broom.Operation{Method: "POST", Path: "/users"}
+	values, _ := broom.ParseRequestValues(nil, nil, "", "username=jsmith")
+	req, err := op.Request("https://myapi.io", values)
+	b, _ := io.ReadAll(req.Body)
 	if len(b) != 0 {
 		t.Errorf("expected an empty body, got %v", string(b))
 	}
@@ -111,43 +277,43 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Unsupported format.
-	op = broom.Operation{BodyFormat: "application/xml"}
-	op.Parameters.Add(broom.Parameter{
-		In:       "body",
-		Name:     "username",
-		Type:     "string",
-		Required: true,
-	})
-	b, err = op.ProcessBody("username=jsmith")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
+	op = broom.Operation{
+		Method:     "POST",
+		Path:       "/users",
+		BodyFormat: "application/xml",
 	}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:       "body",
+			Name:     "username",
+			Type:     "string",
+			Required: true,
+		},
+	)
+	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
 	} else if err.Error() != "unsupported body format application/xml" {
 		t.Errorf("unexpected error %v", err)
 	}
 
-	// Missing required parameter.
-	b, err = op.ProcessBody("")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
-	}
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required body parameter "username"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
 	// Form data (application/x-www-form-urlencoded).
-	op = broom.Operation{BodyFormat: "application/x-www-form-urlencoded"}
-	op.Parameters.Add(broom.Parameter{
-		In:   "body",
-		Name: "username",
-		Type: "string",
-	})
+	op = broom.Operation{
+		Method:     "POST",
+		Path:       "/users",
+		BodyFormat: "application/x-www-form-urlencoded",
+	}
+	op.Parameters.Add(
+		broom.Parameter{
+			In:   "body",
+			Name: "username",
+			Type: "string",
+		},
+	)
 	// Non-defined parameters are expected to be passed through.
-	b, err = op.ProcessBody("email=js@domain&username=jsmith")
+	values, _ = broom.ParseRequestValues(nil, nil, "", "email=js@domain&username=jsmith")
+	req, err = op.Request("https://myapi.io", values)
+	b, _ = io.ReadAll(req.Body)
 	got := string(b)
 	want := "email=js%40domain&username=jsmith"
 	if got != want {
@@ -156,10 +322,23 @@ func TestOperation_ProcessBody(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
+	if req.Method != "POST" {
+		t.Errorf("got %v, want POST", req.Method)
+	}
+	if req.URL.String() != "https://myapi.io/users" {
+		t.Errorf("got %v, want https://myapi.io/users", req.URL.String())
+	}
+	if req.Header.Get("Content-Type") != op.BodyFormat {
+		t.Errorf("got %v, want %v", req.Header.Get("Content-Type"), op.BodyFormat)
+	}
 
 	// JSON data (application/json).
 	// Parameters without a type should remain strings.
-	op = broom.Operation{BodyFormat: "application/json"}
+	op = broom.Operation{
+		Method:     "POST",
+		Path:       "/users",
+		BodyFormat: "application/json",
+	}
 	op.Parameters.Add(
 		broom.Parameter{
 			In:   "body",
@@ -192,10 +371,8 @@ func TestOperation_ProcessBody(t *testing.T) {
 		},
 	)
 	// Invalid boolean.
-	b, err = op.ProcessBody("status=invalid")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
-	}
+	values, _ = broom.ParseRequestValues(nil, nil, "", "status=invalid")
+	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
 	} else if err.Error() != `could not process status: "invalid" is not a valid boolean` {
@@ -203,10 +380,8 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid integer.
-	b, err = op.ProcessBody("storage=3.2")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
-	}
+	values, _ = broom.ParseRequestValues(nil, nil, "", "storage=3.2")
+	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
 	} else if err.Error() != `could not process storage: "3.2" is not a valid integer` {
@@ -214,10 +389,8 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid integer in an array.
-	b, err = op.ProcessBody("lucky_numbers=4,eight,15")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
-	}
+	values, _ = broom.ParseRequestValues(nil, nil, "", "lucky_numbers=4,eight,15")
+	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
 	} else if err.Error() != `could not process lucky_numbers: "eight" is not a valid integer` {
@@ -225,10 +398,8 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Invalid number.
-	b, err = op.ProcessBody("vcpu=1,7")
-	if len(b) != 0 {
-		t.Errorf("expected an empty body, got %v", string(b))
-	}
+	values, _ = broom.ParseRequestValues(nil, nil, "", "vcpu=1,7")
+	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
 	} else if err.Error() != `could not process vcpu: "1,7" is not a valid number` {
@@ -236,7 +407,9 @@ func TestOperation_ProcessBody(t *testing.T) {
 	}
 
 	// Valid data.
-	b, err = op.ProcessBody("email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	values, _ = broom.ParseRequestValues(nil, nil, "", "email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	req, err = op.Request("https://myapi.io", values)
+	b, _ = io.ReadAll(req.Body)
 	got = string(b)
 	// Note: keys are always alphabetical, due to how encoding/json treats maps.
 	want = `{"email":"js@domain","lucky_numbers":[4,8,15,16,23,42],"roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
@@ -246,109 +419,14 @@ func TestOperation_ProcessBody(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
-}
-
-func TestOperation_RealPath(t *testing.T) {
-	// No path parameters.
-	op := broom.Operation{
-		Path: "/users",
+	if req.Method != "POST" {
+		t.Errorf("got %v, want POST", req.Method)
 	}
-	path, err := op.RealPath(nil, "")
-	if path != "/users" {
-		t.Errorf("got %v, want /users", path)
+	if req.URL.String() != "https://myapi.io/users" {
+		t.Errorf("got %v, want https://myapi.io/users", req.URL.String())
 	}
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// No path parameters, but one provided anyway.
-	path, err = op.RealPath([]string{"ignore-me"}, "")
-	if path != "/users" {
-		t.Errorf("got %v, want /users", path)
-	}
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Missing path parameter.
-	op = broom.Operation{Path: "/users/{userId}"}
-	op.Parameters.Add(broom.Parameter{
-		In:   "path",
-		Name: "userId",
-	})
-	path, err = op.RealPath(nil, "")
-	if path != "" {
-		t.Errorf("unexpected path %v", path)
-	}
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != "too few path parameters: got 0, want 1" {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Provided path parameters.
-	op = broom.Operation{Path: "/users/{userId}/orders/{orderId}"}
-	op.Parameters.Add(
-		broom.Parameter{
-			In:   "path",
-			Name: "userId",
-		},
-		broom.Parameter{
-			In:   "path",
-			Name: "orderId",
-		},
-	)
-	path, err = op.RealPath([]string{"test-user", "123456"}, "")
-	if path != "/users/test-user/orders/123456" {
-		t.Errorf("got %v, want /users/test-user/orders/123456", path)
-	}
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Path and query parameters.
-	op = broom.Operation{Path: "/users/{userId}/orders"}
-	op.Parameters.Add(
-		broom.Parameter{
-			In:   "path",
-			Name: "userId",
-		},
-		broom.Parameter{
-			In:       "query",
-			Name:     "billing_country",
-			Required: true,
-		},
-		broom.Parameter{
-			In:   "query",
-			Name: "sort",
-		},
-	)
-	path, err = op.RealPath([]string{"test-user"}, "sort=-updated_at")
-	if path != "" {
-		t.Errorf("unexpected path %v", path)
-	}
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// One required, one non-defined query parameter.
-	path, err = op.RealPath([]string{"test-user"}, "billing_country=US&billing_region=NY&sort=-updated_at")
-	if path != "/users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at" {
-		t.Errorf("got %v, want /users/test-user/orders?billing_country=US&billing_region=NY&sort=-updated_at", path)
-	}
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Confirm that query parameters are escaped.
-	path, err = op.RealPath([]string{"test-user"}, "billing_country=U S")
-	if path != "/users/test-user/orders?billing_country=U+S" {
-		t.Errorf("got %v, want /users/test-user/orders?billing_country=U+S", path)
-	}
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
+	if req.Header.Get("Content-Type") != op.BodyFormat {
+		t.Errorf("got %v, want %v", req.Header.Get("Content-Type"), op.BodyFormat)
 	}
 }
 
@@ -477,5 +555,57 @@ func TestParameter_NameWithFlags(t *testing.T) {
 	want = "first_name (deprecated, required)"
 	if got != want {
 		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestParseRequestValues(t *testing.T) {
+	// Invalid header.
+	_, err := broom.ParseRequestValues([]string{"X-Vendor Test"}, nil, "", "")
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `parse header: could not parse "X-Vendor Test"` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Invalid query.
+	_, err = broom.ParseRequestValues(nil, nil, "first_name=john;last_name=smith", "")
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `parse query: invalid semicolon separator in query` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Invalid body.
+	_, err = broom.ParseRequestValues(nil, nil, "", "first_name=john;last_name=smith")
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else if err.Error() != `parse body: invalid semicolon separator in query` {
+		t.Errorf("unexpected error %v", err)
+	}
+
+	// Valid values.
+	values, err := broom.ParseRequestValues([]string{"X-Vendor:Test"}, []string{"a", "b"}, "filter[deleted]=true", "first_name=john&last_name=smith")
+	if err != nil {
+		t.Errorf("unexpected error %v", err)
+	}
+	wantHeader := http.Header{}
+	wantHeader.Add("X-Vendor", "Test")
+	if !cmp.Equal(values.Header, wantHeader) {
+		t.Errorf("got %v, want %v", values.Header, wantHeader)
+	}
+	wantPath := []string{"a", "b"}
+	if !cmp.Equal(values.Path, wantPath) {
+		t.Errorf("got %v, want %v", values.Path, wantPath)
+	}
+	wantQuery := url.Values{}
+	wantQuery.Add("filter[deleted]", "true")
+	if !cmp.Equal(values.Query, wantQuery) {
+		t.Errorf("got %v, want %v", values.Query, wantQuery)
+	}
+	wantBody := url.Values{}
+	wantBody.Add("first_name", "john")
+	wantBody.Add("last_name", "smith")
+	if !cmp.Equal(values.Body, wantBody) {
+		t.Errorf("got %v, want %v", values.Body, wantBody)
 	}
 }

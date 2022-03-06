@@ -4,9 +4,12 @@
 package broom
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -85,26 +88,81 @@ func (op Operation) HasBody() bool {
 	return op.BodyFormat != ""
 }
 
-// ProcessBody converts the given body string into a byte array suitable for sending.
-func (op Operation) ProcessBody(body string) ([]byte, error) {
+// Validate validates the given values against the operation's parameters.
+func (op Operation) Validate(values RequestValues) error {
+	nParams := len(op.Parameters.Path)
+	nValues := len(values.Path)
+	if nParams > nValues {
+		return fmt.Errorf("too few path parameters: got %v, want %v", nValues, nParams)
+	}
+	if err := op.Parameters.Query.Validate(values.Query); err != nil {
+		return err
+	}
+	if err := op.Parameters.Body.Validate(values.Body); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Request creates a new request with the given values.
+func (op Operation) Request(serverURL string, values RequestValues) (*http.Request, error) {
+	if err := op.Validate(values); err != nil {
+		return nil, err
+	}
+	url := op.requestURL(serverURL, values)
+	body, err := op.requestBody(values.Body)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(op.Method, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	if len(values.Header) > 0 {
+		req.Header = values.Header
+	}
+	if op.HasBody() {
+		req.Header.Set("Content-Type", op.BodyFormat)
+	}
+	req.Header.Set("User-Agent", fmt.Sprintf("broom/%s (%s %s)", Version, runtime.GOOS, runtime.GOARCH))
+
+	return req, nil
+}
+
+// requestURL builds an absolute request url using the given body/query values.
+func (op Operation) requestURL(serverURL string, values RequestValues) string {
+	oldnew := make([]string, 0, len(op.Parameters.Path)*2)
+	for i, v := range values.Path {
+		if i+1 > len(op.Parameters.Path) {
+			break
+		}
+		paramName := fmt.Sprintf("{%v}", op.Parameters.Path[i].Name)
+		oldnew = append(oldnew, paramName, v)
+	}
+	r := strings.NewReplacer(oldnew...)
+	path := r.Replace(op.Path)
+	if len(values.Query) > 0 {
+		path = path + "?" + values.Query.Encode()
+	}
+
+	return serverURL + path
+}
+
+// requestBody converts the given body values into a byte array suitable for sending.
+func (op Operation) requestBody(bodyValues url.Values) ([]byte, error) {
 	if !op.HasBody() {
 		// Operation does not support specifying a body (e.g. GET/DELETE).
 		return nil, nil
 	}
-	values, err := url.ParseQuery(body)
-	if err != nil {
-		return nil, fmt.Errorf("parse body: %w", err)
-	}
-	if err = op.Parameters.Body.Validate(values); err != nil {
-		return nil, err
-	}
 
 	if IsJSON(op.BodyFormat) {
-		jsonValues := make(map[string]interface{}, len(values))
-		for name := range values {
-			value := values.Get(name)
+		jsonValues := make(map[string]interface{}, len(bodyValues))
+		for name := range bodyValues {
+			value := bodyValues.Get(name)
 			// Allow defined parameters to cast the string.
 			if bodyParam, ok := op.Parameters.Body.ByName(name); ok {
+				var err error
 				jsonValues[name], err = bodyParam.CastString(value)
 				if err != nil {
 					return nil, fmt.Errorf("could not process %v: %v", name, err)
@@ -117,38 +175,10 @@ func (op Operation) ProcessBody(body string) ([]byte, error) {
 		}
 		return json.Marshal(jsonValues)
 	} else if op.BodyFormat == "application/x-www-form-urlencoded" {
-		return []byte(values.Encode()), nil
+		return []byte(bodyValues.Encode()), nil
 	} else {
 		return nil, fmt.Errorf("unsupported body format %v", op.BodyFormat)
 	}
-}
-
-// RealPath returns a path with the given path and query parameters included.
-func (op Operation) RealPath(pathValues []string, query string) (string, error) {
-	nParams := len(op.Parameters.Path)
-	nValues := len(pathValues)
-	if nParams > nValues {
-		return "", fmt.Errorf("too few path parameters: got %v, want %v", nValues, nParams)
-	}
-	replace := make([]string, 0, len(op.Parameters.Path)*2)
-	for i, param := range op.Parameters.Path {
-		paramName := fmt.Sprintf("{%v}", param.Name)
-		replace = append(replace, paramName, pathValues[i])
-	}
-	r := strings.NewReplacer(replace...)
-	path := r.Replace(op.Path)
-	if query != "" {
-		queryValues, err := url.ParseQuery(query)
-		if err != nil {
-			return "", fmt.Errorf("parse query: %w", err)
-		}
-		if err := op.Parameters.Query.Validate(queryValues); err != nil {
-			return "", err
-		}
-		path = path + "?" + queryValues.Encode()
-	}
-
-	return path, nil
 }
 
 // Parameters represents the operation's parameters.
@@ -282,4 +312,44 @@ func (p Parameter) Validate(value string) error {
 	}
 
 	return nil
+}
+
+// RequestValues represent the values used to populate an operation request.
+//
+// Header, query, and body values are added to the request even if they don't
+// have matching parameters, unlike path values, where the parameter is used
+// to determine the name of the placeholder to replace.
+type RequestValues struct {
+	Header http.Header
+	Path   []string
+	Query  url.Values
+	Body   url.Values
+}
+
+// ParseRequestValues parses parameter values from the given strings.
+func ParseRequestValues(headers []string, pathValues []string, query string, body string) (RequestValues, error) {
+	headerValues := make(http.Header, len(headers))
+	for _, header := range headers {
+		kv := strings.SplitN(header, ":", 2)
+		if len(kv) < 2 {
+			return RequestValues{}, fmt.Errorf("parse header: could not parse %q", header)
+		}
+		headerValues.Set(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
+	}
+	queryValues, err := url.ParseQuery(query)
+	if err != nil {
+		return RequestValues{}, fmt.Errorf("parse query: %w", err)
+	}
+	bodyValues, err := url.ParseQuery(body)
+	if err != nil {
+		return RequestValues{}, fmt.Errorf("parse body: %w", err)
+	}
+	values := RequestValues{
+		Header: headerValues,
+		Path:   pathValues,
+		Query:  queryValues,
+		Body:   bodyValues,
+	}
+
+	return values, nil
 }

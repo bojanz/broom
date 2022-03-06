@@ -4,12 +4,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -73,11 +71,6 @@ func profileCmd(args []string) {
 		flags.Usage()
 		return
 	}
-	path, err := op.RealPath(pathValues, *query)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error:", err)
-		os.Exit(1)
-	}
 	// The operation has a body, but no body string was provided.
 	// Launch the terminal UI to collect body values.
 	if *body == "" && op.HasBody() {
@@ -87,13 +80,13 @@ func profileCmd(args []string) {
 			os.Exit(0)
 		}
 	}
-	bodyBytes, err := op.ProcessBody(*body)
+	values, err := broom.ParseRequestValues(*headers, pathValues, *query, *body)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 
-	req, err := http.NewRequest(op.Method, profileCfg.ServerURL+path, bytes.NewReader(bodyBytes))
+	req, err := op.Request(profileCfg.ServerURL, values)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
@@ -102,15 +95,6 @@ func profileCmd(args []string) {
 		fmt.Fprintln(os.Stderr, "Error: authenticate:", err)
 		os.Exit(1)
 	}
-	if op.HasBody() {
-		req.Header.Set("Content-Type", op.BodyFormat)
-	}
-	for _, header := range *headers {
-		kv := strings.SplitN(header, ":", 2)
-		req.Header.Set(strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1]))
-	}
-	req.Header.Set("User-Agent", fmt.Sprintf("broom/%s (%s %s)", broom.Version, runtime.GOOS, runtime.GOARCH))
-
 	result, err := broom.Execute(req, *verbose)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
