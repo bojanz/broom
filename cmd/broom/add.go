@@ -64,10 +64,6 @@ func addCmd(args []string) {
 		fmt.Fprintf(os.Stderr, "Error: unrecognized auth type %q\n", *authType)
 		os.Exit(1)
 	}
-	if strings.HasSuffix(*serverURL, "/") {
-		fmt.Fprint(os.Stderr, "Error: the server URL must not have a trailing slash\n", *authType)
-		os.Exit(1)
-	}
 
 	profile := flags.Arg(1)
 	filename := filepath.Clean(flags.Arg(2))

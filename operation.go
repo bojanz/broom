@@ -145,6 +145,9 @@ func (op Operation) requestURL(serverURL string, values RequestValues) string {
 	if len(values.Query) > 0 {
 		path = path + "?" + values.Query.Encode()
 	}
+	// Paths always start with a slash, so make
+	// sure the server URL doesn't end with one.
+	serverURL = strings.TrimSuffix(serverURL, "/")
 
 	return serverURL + path
 }

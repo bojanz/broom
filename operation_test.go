@@ -150,9 +150,9 @@ func TestOperation_Validate(t *testing.T) {
 }
 
 func TestOperation_Request(t *testing.T) {
-	// No path parameters.
+	// No path parameters. Server URL with trailing slash.
 	op := broom.Operation{Method: "GET", Path: "/users"}
-	req, err := op.Request("https://myapi.io", broom.RequestValues{})
+	req, err := op.Request("https://myapi.io/", broom.RequestValues{})
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
