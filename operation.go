@@ -160,7 +160,7 @@ func (op Operation) requestBody(bodyValues url.Values) ([]byte, error) {
 	}
 
 	if IsJSON(op.BodyFormat) {
-		jsonValues := make(map[string]interface{}, len(bodyValues))
+		jsonValues := make(map[string]any, len(bodyValues))
 		for name := range bodyValues {
 			value := bodyValues.Get(name)
 			// Allow defined parameters to cast the string.
@@ -240,13 +240,14 @@ type Parameter struct {
 	Style       string
 	Type        string
 	Enum        []string
-	Default     interface{}
+	Default     any
 	Deprecated  bool
 	Required    bool
 }
 
 // Label returns a human-readable parameter label.
 func (p Parameter) Label() string {
+	//lint:ignore SA1019 The param name is ASCII, so strings.Title() still works fine.
 	return strings.Title(strcase.ToDelimited(p.Name, ' '))
 }
 
@@ -268,10 +269,10 @@ func (p Parameter) NameWithFlags() string {
 }
 
 // CastString casts the given string to the parameter type.
-func (p Parameter) CastString(str string) (interface{}, error) {
+func (p Parameter) CastString(str string) (any, error) {
 	if strings.HasPrefix(p.Type, "[]") {
 		strs := strings.Split(str, ",")
-		vs := make([]interface{}, 0, len(strs))
+		vs := make([]any, 0, len(strs))
 		for _, s := range strs {
 			v, err := parseStr(s, p.Type[2:])
 			if err != nil {
@@ -290,7 +291,7 @@ func (p Parameter) CastString(str string) (interface{}, error) {
 }
 
 // parseStr invokes the strconv parse function for the given type.
-func parseStr(str string, newType string) (interface{}, error) {
+func parseStr(str string, newType string) (any, error) {
 	if newType == "boolean" {
 		return strconv.ParseBool(str)
 	} else if newType == "integer" {

@@ -80,7 +80,7 @@ func TestLoadOperations(t *testing.T) {
 						Description: "The currency code.",
 						Type:        "string",
 						Enum:        []string{"EUR", "USD"},
-						Default:     interface{}("USD"),
+						Default:     any("USD"),
 						Required:    true,
 					},
 					broom.Parameter{
@@ -102,7 +102,7 @@ func TestLoadOperations(t *testing.T) {
 						Name:        "price",
 						Description: "The product price, in cents.",
 						Type:        "integer",
-						Default:     interface{}(float64(1099)),
+						Default:     any(float64(1099)),
 						Required:    true,
 					},
 					broom.Parameter{
@@ -117,7 +117,7 @@ func TestLoadOperations(t *testing.T) {
 						Name:        "status",
 						Description: "Whether the product is available for purchase.",
 						Type:        "boolean",
-						Default:     interface{}(true),
+						Default:     any(true),
 					},
 				},
 			},

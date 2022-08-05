@@ -1,6 +1,6 @@
 module github.com/bojanz/broom
 
-go 1.17
+go 1.18
 
 require (
 	github.com/gdamore/tcell/v2 v2.4.1-0.20210905002822-f057f0a857a1

@@ -188,8 +188,8 @@ func getSchemaType(schema openapi3.Schema) string {
 	return schemaType
 }
 
-// castEnum converts enum values from interface{} to string.
-func castEnum(enum []interface{}) []string {
+// castEnum converts enum values to strings.
+func castEnum(enum []any) []string {
 	if len(enum) == 0 {
 		return nil
 	}
