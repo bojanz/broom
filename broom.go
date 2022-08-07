@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -116,7 +117,16 @@ func PrettyJSON(json []byte) []byte {
 	json = bytes.ReplaceAll(json, []byte("\\u003c"), []byte("<"))
 	json = bytes.ReplaceAll(json, []byte("\\u003e"), []byte(">"))
 
-	return pretty.Color(pretty.Pretty(json), nil)
+	json = pretty.Pretty(json)
+	// It is a unix convention to disable coloring when output
+	// is being piped, to allow programs to be composed.
+	// The user is also allowed to explicitly disable coloring
+	// using an environment variable (see https://no-color.org).
+	if isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == "" {
+		json = pretty.Color(json, nil)
+	}
+
+	return json
 }
 
 // RunCommand runs the given command and returns its output.
@@ -150,4 +160,10 @@ func contains(a []string, x string) bool {
 		}
 	}
 	return false
+}
+
+// isTerminal checks whether the given file descriptor represents a terminal.
+func isTerminal(file *os.File) bool {
+	fi, _ := file.Stat()
+	return (fi.Mode() & fs.ModeCharDevice) == fs.ModeCharDevice
 }
