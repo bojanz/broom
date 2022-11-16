@@ -62,7 +62,6 @@ func LoadOperations(filename string) (Operations, error) {
 func LoadSpec(filename string) (*openapi3.T, error) {
 	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
 	openapi3.DefineStringFormat("ulid", `^[0-7]{1}[0-9A-HJKMNP-TV-Z]{25}$`)
-	openapi3.SchemaFormatValidationDisabled = true
 
 	b, err := os.ReadFile(filename)
 	if err != nil {
