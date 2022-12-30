@@ -223,6 +223,10 @@ func bodyForm(op broom.Operation) (string, bool) {
 			form.AddDropDown(paramLabel, param.Enum, initialOption, func(option string, optionIndex int) {
 				values.Set(paramName, option)
 			})
+		} else if param.Multiline {
+			form.AddTextArea(paramLabel, paramDefault, 40, 0, 0, func(text string) {
+				values.Set(paramName, text)
+			})
 		} else {
 			form.AddInputField(paramLabel, paramDefault, 40, nil, func(text string) {
 				values.Set(paramName, text)

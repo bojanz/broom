@@ -94,6 +94,10 @@ paths:
                 sku:
                   type: string
                   description: The product sku.
+                description:
+                  type: string
+                  description: The product description.
+                  x-multiline: true
                 price:
                   type: integer
                   description: The product price, in cents.
@@ -161,6 +165,10 @@ paths:
                 sku:
                   type: string
                   description: The product sku.
+                description:
+                  type: string
+                  description: The product description.
+                  x-multiline: true
                 price:
                   type: integer
                   description: The product price, in cents.
@@ -218,6 +226,10 @@ components:
         sku:
           type: string
           description: The product sku.
+        description:
+          type: string
+          description: The product description.
+          x-multiline: true
         price:
           type: integer
           description: The product price, in cents.

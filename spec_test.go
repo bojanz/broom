@@ -85,6 +85,14 @@ func TestLoadOperations(t *testing.T) {
 					},
 					broom.Parameter{
 						In:          "body",
+						Name:        "description",
+						Description: "The product description.",
+						Type:        "string",
+						Default:     nil,
+						Multiline:   true,
+					},
+					broom.Parameter{
+						In:          "body",
 						Name:        "name",
 						Description: "The product name.",
 						Type:        "string",
@@ -153,6 +161,14 @@ func TestLoadOperations(t *testing.T) {
 						Type:        "string",
 						Enum:        []string{"EUR", "USD"},
 						Default:     nil,
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "description",
+						Description: "The product description.",
+						Type:        "string",
+						Default:     nil,
+						Multiline:   true,
 					},
 					broom.Parameter{
 						In:          "body",
