@@ -143,7 +143,6 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 						required = true
 					}
 				}
-				_, multiline := schema.Value.Extensions["x-multiline"]
 
 				op.Parameters.Add(Parameter{
 					In:          "body",
@@ -154,7 +153,6 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 					Default:     schema.Value.Default,
 					Deprecated:  schema.Value.Deprecated,
 					Required:    required,
-					Multiline:   multiline,
 				})
 			}
 			break

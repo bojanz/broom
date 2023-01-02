@@ -2,7 +2,7 @@
 
 Broom is an API client powered by OpenAPI.
 
-Point it to an OpenAPI spec, and it will provide a CLI/TUI for each defined operation.
+Point it to an OpenAPI spec, and it will provide a CLI for each defined operation.
 JSON output is colored and formatted, authentication is handled.
 
 ## Install
@@ -45,9 +45,6 @@ broom api get-product 01FAZ7A1H11FW16WPQZP879YX3
 # Request body parameters are passed via -b.
 # The query string is auto-mapped to JSON if the service requires it.
 broom api create-product -b "name=T-Shirt&price=999&currency_code=EUR"
-
-# Omitting -b will open a terminal UI for providing body parameters.
-broom api create-product
 
 # Get the list of all arguments and parameters via --help.
 broom api create-product --help
@@ -108,4 +105,5 @@ Named after a curling broom, with bonus points for resembling the sound a car ma
 
 ## Alternatives
 
-[Restish](https://rest.sh) does the non-TUI part of this tool with many additional features.
+- [HTTPie](https://httpie.io)
+- [Restish](https://rest.sh)

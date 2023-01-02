@@ -97,7 +97,6 @@ paths:
                 description:
                   type: string
                   description: The product description.
-                  x-multiline: true
                 price:
                   type: integer
                   description: The product price, in cents.
@@ -168,7 +167,6 @@ paths:
                 description:
                   type: string
                   description: The product description.
-                  x-multiline: true
                 price:
                   type: integer
                   description: The product price, in cents.
@@ -229,7 +227,6 @@ components:
         description:
           type: string
           description: The product description.
-          x-multiline: true
         price:
           type: integer
           description: The product price, in cents.

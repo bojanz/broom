@@ -6,15 +6,11 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/iancoleman/strcase"
-	"github.com/rivo/tview"
 	flag "github.com/spf13/pflag"
 
 	"github.com/bojanz/broom"
@@ -66,19 +62,10 @@ func profileCmd(args []string) {
 		os.Exit(1)
 	}
 	pathValues := flags.Args()[2:]
-	if *help || len(op.Parameters.Path) > len(pathValues) {
+	if *help || len(op.Parameters.Path) > len(pathValues) || (len(op.Parameters.Body) > 0 && *body == "") {
 		operationUsage(op, profile)
 		flags.Usage()
 		return
-	}
-	// The operation has a body, but no body string was provided.
-	// Launch the terminal UI to collect body values.
-	if *body == "" && op.HasBody() {
-		var canceled bool
-		*body, canceled = bodyForm(op)
-		if canceled {
-			os.Exit(0)
-		}
 	}
 	values, err := broom.ParseRequestValues(*headers, pathValues, *query, *body)
 	if err != nil {
@@ -172,79 +159,4 @@ func operationUsage(op broom.Operation, profile string) {
 		w.Flush()
 	}
 	fmt.Fprintln(os.Stdout, "\nOptions:")
-}
-
-// bodyForm renders a form for entering body parameters.
-func bodyForm(op broom.Operation) (string, bool) {
-	values := url.Values{}
-	canceled := false
-	app := tview.NewApplication()
-	form := tview.NewForm()
-	cancelFunc := func() {
-		values = url.Values{}
-		canceled = true
-		app.Stop()
-	}
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlC {
-			cancelFunc()
-		}
-		return event
-	})
-	form.SetCancelFunc(cancelFunc)
-	form.SetBorder(true)
-	form.SetTitle(op.Summary)
-	form.SetTitleAlign(tview.AlignLeft)
-
-	for _, param := range op.Parameters.Body {
-		paramName := param.Name
-		paramLabel := param.Label()
-		if param.Required {
-			paramLabel = fmt.Sprintf("%v*", paramLabel)
-		}
-		paramDefault := ""
-		if param.Default != nil {
-			paramDefault = fmt.Sprintf("%v", param.Default)
-		}
-
-		if param.Type == "boolean" {
-			form.AddCheckbox(paramLabel, paramDefault == "true", func(checked bool) {
-				values.Set(paramName, strconv.FormatBool(checked))
-			})
-		} else if len(param.Enum) > 0 {
-			initialOption := 0
-			for k, v := range param.Enum {
-				if v == paramDefault {
-					initialOption = k
-					break
-				}
-			}
-
-			form.AddDropDown(paramLabel, param.Enum, initialOption, func(option string, optionIndex int) {
-				values.Set(paramName, option)
-			})
-		} else if param.Multiline {
-			form.AddTextArea(paramLabel, paramDefault, 40, 0, 0, func(text string) {
-				values.Set(paramName, text)
-			})
-		} else {
-			form.AddInputField(paramLabel, paramDefault, 40, nil, func(text string) {
-				values.Set(paramName, text)
-			})
-		}
-	}
-	form.AddButton("Submit", func() {
-		// Allow submit only if the input is valid.
-		err := op.Parameters.Body.Validate(values)
-		if err == nil {
-			app.Stop()
-		}
-	})
-	form.AddButton("Cancel", cancelFunc)
-
-	if err := app.SetRoot(form, true).EnableMouse(true).Run(); err != nil {
-		panic(err)
-	}
-
-	return values.Encode(), canceled
 }

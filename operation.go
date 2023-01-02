@@ -243,7 +243,6 @@ type Parameter struct {
 	Default     any
 	Deprecated  bool
 	Required    bool
-	Multiline   bool
 }
 
 // Label returns a human-readable parameter label.

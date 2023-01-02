@@ -89,7 +89,6 @@ func TestLoadOperations(t *testing.T) {
 						Description: "The product description.",
 						Type:        "string",
 						Default:     nil,
-						Multiline:   true,
 					},
 					broom.Parameter{
 						In:          "body",
@@ -168,7 +167,6 @@ func TestLoadOperations(t *testing.T) {
 						Description: "The product description.",
 						Type:        "string",
 						Default:     nil,
-						Multiline:   true,
 					},
 					broom.Parameter{
 						In:          "body",
