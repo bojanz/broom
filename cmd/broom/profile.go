@@ -56,7 +56,7 @@ func profileCmd(args []string) {
 		exitWithError(fmt.Errorf("unknown operation %s", opID))
 	}
 	pathValues := flags.Args()[2:]
-	if *help || len(op.Parameters.Path) > len(pathValues) || (len(op.Parameters.Body) > 0 && *body == "") {
+	if *help || len(op.Parameters.Path) > len(pathValues) {
 		operationUsage(op, profile)
 		flagUsage(flags)
 		return
