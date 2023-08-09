@@ -152,16 +152,6 @@ func Sanitize(s string) string {
 	return strings.Trim(strip.StripTags(s), "\n")
 }
 
-// contains returns whether slice a contains x.
-func contains(a []string, x string) bool {
-	for _, v := range a {
-		if v == x {
-			return true
-		}
-	}
-	return false
-}
-
 // isTerminal checks whether the given file descriptor represents a terminal.
 func isTerminal(file *os.File) bool {
 	fi, _ := file.Stat()

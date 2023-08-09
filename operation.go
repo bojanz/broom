@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -310,7 +311,7 @@ func (p Parameter) Validate(value string) error {
 	// A strict check would not avoid empty strings, requiring them to be
 	// declared in the enum as well, but since many specs don't do that,
 	// the check here is loosened to prevent user frustration.
-	if value != "" && len(p.Enum) > 0 && !contains(p.Enum, value) {
+	if value != "" && len(p.Enum) > 0 && !slices.Contains(p.Enum, value) {
 		formattedEnum := strings.Join(p.Enum, ", ")
 		return fmt.Errorf("invalid value for %v parameter %q (allowed values: %v)", p.In, p.Name, formattedEnum)
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	flag "github.com/spf13/pflag"
@@ -60,7 +61,7 @@ func addCmd(args []string) {
 		flags.Usage()
 		return
 	}
-	if *authType != "" && !contains(authTypes, *authType) {
+	if *authType != "" && !slices.Contains(authTypes, *authType) {
 		fmt.Fprintf(os.Stderr, "Error: unrecognized auth type %q\n", *authType)
 		os.Exit(1)
 	}
@@ -124,14 +125,4 @@ func addCmd(args []string) {
 		os.Exit(1)
 	}
 	fmt.Fprintf(os.Stdout, "Added the %v profile to .broom.yaml\n", profile)
-}
-
-// contains returns whether the sorted slice a contains x.
-func contains(a []string, x string) bool {
-	for _, v := range a {
-		if v == x {
-			return true
-		}
-	}
-	return false
 }
