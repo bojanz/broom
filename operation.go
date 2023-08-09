@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -95,12 +94,6 @@ func (op Operation) Validate(values RequestValues) error {
 	nValues := len(values.Path)
 	if nParams > nValues {
 		return fmt.Errorf("too few path parameters: got %v, want %v", nValues, nParams)
-	}
-	if err := op.Parameters.Query.Validate(values.Query); err != nil {
-		return err
-	}
-	if err := op.Parameters.Body.Validate(values.Body); err != nil {
-		return err
 	}
 
 	return nil
@@ -222,17 +215,6 @@ func (pl ParameterList) ByName(name string) (Parameter, bool) {
 	return Parameter{}, false
 }
 
-// Validate validates each parameter against the given values.
-func (pl ParameterList) Validate(values url.Values) error {
-	for _, p := range pl {
-		value := values.Get(p.Name)
-		if err := p.Validate(value); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Parameter represents an operation parameter.
 type Parameter struct {
 	In          string
@@ -301,22 +283,6 @@ func parseStr(str string, newType string) (any, error) {
 		return strconv.ParseFloat(str, 64)
 	}
 	return str, nil
-}
-
-// Validate validates the parameter against the given value.
-func (p Parameter) Validate(value string) error {
-	if value == "" && p.Required {
-		return fmt.Errorf("missing required %v parameter %q", p.In, p.Name)
-	}
-	// A strict check would not avoid empty strings, requiring them to be
-	// declared in the enum as well, but since many specs don't do that,
-	// the check here is loosened to prevent user frustration.
-	if value != "" && len(p.Enum) > 0 && !slices.Contains(p.Enum, value) {
-		formattedEnum := strings.Join(p.Enum, ", ")
-		return fmt.Errorf("invalid value for %v parameter %q (allowed values: %v)", p.In, p.Name, formattedEnum)
-	}
-
-	return nil
 }
 
 // RequestValues represent the values used to populate an operation request.

@@ -115,38 +115,6 @@ func TestOperation_Validate(t *testing.T) {
 	} else if err.Error() != "too few path parameters: got 0, want 1" {
 		t.Errorf("unexpected error %v", err)
 	}
-
-	// Missing query parameter.
-	op = broom.Operation{Path: "/users/{userId}/orders"}
-	op.Parameters.Add(
-		broom.Parameter{
-			In:       "query",
-			Name:     "billing_country",
-			Required: true,
-		},
-	)
-	err = op.Validate(broom.RequestValues{})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Missing body parameter.
-	op = broom.Operation{BodyFormat: "application/json"}
-	op.Parameters.Add(
-		broom.Parameter{
-			In:       "body",
-			Name:     "username",
-			Required: true,
-		},
-	)
-	err = op.Validate(broom.RequestValues{})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required body parameter "username"` {
-		t.Errorf("unexpected error %v", err)
-	}
 }
 
 func TestOperation_Request(t *testing.T) {
@@ -456,51 +424,6 @@ func TestParameters_ByName(t *testing.T) {
 	p3, ok := parameters.ByName("billing_region")
 	if p3.Name != "" || ok != false {
 		t.Errorf(`got %v, %v want "", false`, p3.Name, ok)
-	}
-}
-
-func TestParameters_Validate(t *testing.T) {
-	parameters := broom.ParameterList{
-		broom.Parameter{
-			In:       "query",
-			Name:     "billing_country",
-			Required: true,
-		},
-		broom.Parameter{
-			In:   "query",
-			Name: "sort",
-			Enum: []string{"billing_country", "user_id"},
-		},
-	}
-
-	// Required parameter missing.
-	err := parameters.Validate(url.Values{})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Required parameter provided but empty
-	err = parameters.Validate(url.Values{"billing_country": {""}})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `missing required query parameter "billing_country"` {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Provided required parameter.
-	err = parameters.Validate(url.Values{"billing_country": {"US"}})
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-
-	// Enum validation.
-	err = parameters.Validate(url.Values{"billing_country": {"US"}, "sort": {"invalid"}})
-	if err == nil {
-		t.Error("expected error, got nil")
-	} else if err.Error() != `invalid value for query parameter "sort" (allowed values: billing_country, user_id)` {
-		t.Errorf("unexpected error %v", err)
 	}
 }
 
