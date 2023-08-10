@@ -9,12 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/fatih/color"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/tidwall/pretty"
 )
@@ -118,11 +118,7 @@ func PrettyJSON(json []byte) []byte {
 	json = bytes.ReplaceAll(json, []byte("\\u003e"), []byte(">"))
 
 	json = pretty.Pretty(json)
-	// It is a unix convention to disable coloring when output
-	// is being piped, to allow programs to be composed.
-	// The user is also allowed to explicitly disable coloring
-	// using an environment variable (see https://no-color.org).
-	if isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == "" {
+	if !color.NoColor {
 		json = pretty.Color(json, nil)
 	}
 
@@ -150,10 +146,4 @@ func RunCommand(command string) (string, error) {
 // Sanitize sanitizes the given string, stripping HTML and trailing newlines.
 func Sanitize(s string) string {
 	return strings.Trim(strip.StripTags(s), "\n")
-}
-
-// isTerminal checks whether the given file descriptor represents a terminal.
-func isTerminal(file *os.File) bool {
-	fi, _ := file.Stat()
-	return (fi.Mode() & fs.ModeCharDevice) == fs.ModeCharDevice
 }
