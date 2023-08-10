@@ -81,11 +81,11 @@ func flagUsage(fs *flag.FlagSet) {
 
 		line := ""
 		if f.Shorthand != "" && f.ShorthandDeprecated == "" {
-			line = fmt.Sprintf("  -%s, --%s", color.GreenString(f.Shorthand), color.GreenString(f.Name))
+			line = fmt.Sprintf("    -%s, --%s", color.GreenString(f.Shorthand), color.GreenString(f.Name))
 		} else {
 			// An empty colored string needs to be output for the missing shorthand to allow
 			// the flags to line up properly.
-			line = fmt.Sprintf("      %s--%s", color.GreenString(""), color.GreenString(f.Name))
+			line = fmt.Sprintf("        %s--%s", color.GreenString(""), color.GreenString(f.Name))
 		}
 		varname, usage := flag.UnquoteUsage(f)
 		if varname != "" {
