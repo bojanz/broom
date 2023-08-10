@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/fatih/color"
 	flag "github.com/spf13/pflag"
@@ -35,13 +34,13 @@ func rmCmd(args []string) {
 	if err := broom.WriteConfig(".broom.yaml", cfg); err != nil {
 		exitWithError(err)
 	}
-	fmt.Fprintf(os.Stdout, "Removed the %v profile from .broom.yaml\n", profile)
+	fmt.Fprintf(color.Output, "Removed the %v profile from .broom.yaml\n", profile)
 }
 
 func rmUsage() {
-	fmt.Fprintln(os.Stdout, color.YellowString("Usage:"), "broom rm", color.GreenString("<profile>"))
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "Removes a profile from the .broom.yaml config file in the current directory.")
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, color.YellowString("Options:"))
+	fmt.Fprintln(color.Output, color.YellowString("Usage:"), "broom rm", color.GreenString("<profile>"))
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "Removes a profile from the .broom.yaml config file in the current directory.")
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, color.YellowString("Options:"))
 }

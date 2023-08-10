@@ -78,7 +78,7 @@ func profileCmd(args []string) {
 		exitWithError(err)
 	}
 
-	fmt.Fprint(os.Stdout, result.Output)
+	fmt.Fprint(color.Output, result.Output)
 	if result.StatusCode >= http.StatusBadRequest {
 		os.Exit(1)
 	}
@@ -86,13 +86,13 @@ func profileCmd(args []string) {
 
 // profileUsage prints Broom usage for a single profile.
 func profileUsage(profile string, serverURL string, ops broom.Operations) {
-	fmt.Fprintln(os.Stdout, color.YellowString("Usage:"), "broom", profile, color.GreenString("<operation>"), "[--help]")
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "Runs the specified operation on", serverURL)
+	fmt.Fprintln(color.Output, color.YellowString("Usage:"), "broom", profile, color.GreenString("<operation>"), "[--help]")
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "Runs the specified operation on", serverURL)
 	if len(ops) > 0 {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, color.YellowString("Operations:"))
-		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, color.YellowString("Operations:"))
+		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		for _, tag := range ops.Tags() {
 			fmt.Fprintf(w, "\t%v\t\t\n", tag)
 			for _, op := range ops.ByTag(tag) {
@@ -100,8 +100,8 @@ func profileUsage(profile string, serverURL string, ops broom.Operations) {
 			}
 		}
 		w.Flush()
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintf(os.Stdout, "Run 'broom %v %v --help' to view the available arguments for an operation.\n", profile, color.GreenString("<operation>"))
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintf(color.Output, "Run 'broom %v %v --help' to view the available arguments for an operation.\n", profile, color.GreenString("<operation>"))
 	}
 }
 
@@ -113,19 +113,19 @@ func operationUsage(op broom.Operation, profile string) {
 		sb.WriteString(" " + color.GreenString("<%s>", strcase.ToSnake(param.Name)))
 	}
 
-	fmt.Fprintln(os.Stdout, color.YellowString("Usage:"), "broom", profile, sb.String())
+	fmt.Fprintln(color.Output, color.YellowString("Usage:"), "broom", profile, sb.String())
 	if summary := op.SummaryWithFlags(); summary != "" {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, summary)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, summary)
 	}
 	if op.Description != "" {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, op.Description)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, op.Description)
 	}
 	if len(op.Parameters.Header) > 0 {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, color.YellowString("Header parameters:"))
-		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, color.YellowString("Header parameters:"))
+		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		for _, param := range op.Parameters.Header {
 			description := prepareParameterDescription(param)
 			fmt.Fprintf(w, "\t%v %v\t%v\n", color.GreenString(param.Name), param.FormattedFlags(), description)
@@ -133,9 +133,9 @@ func operationUsage(op broom.Operation, profile string) {
 		w.Flush()
 	}
 	if len(op.Parameters.Query) > 0 {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, color.YellowString("Query parameters:"))
-		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, color.YellowString("Query parameters:"))
+		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		for _, param := range op.Parameters.Query {
 			description := prepareParameterDescription(param)
 			fmt.Fprintf(w, "\t%v %v\t%v\n", color.GreenString(param.Name), param.FormattedFlags(), description)
@@ -143,17 +143,17 @@ func operationUsage(op broom.Operation, profile string) {
 		w.Flush()
 	}
 	if len(op.Parameters.Body) > 0 {
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, color.YellowString("Body parameters:"))
-		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, color.YellowString("Body parameters:"))
+		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		for _, param := range op.Parameters.Body {
 			description := prepareParameterDescription(param)
 			fmt.Fprintf(w, "\t%v %v\t%v\n", color.GreenString(param.Name), param.FormattedFlags(), description)
 		}
 		w.Flush()
 	}
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, color.YellowString("Options:"))
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, color.YellowString("Options:"))
 }
 
 // prepareParameterDescription prepares a parameter description for display.

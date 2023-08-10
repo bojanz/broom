@@ -28,12 +28,12 @@ func main() {
 		}
 		profiles := cfg.Profiles()
 
-		fmt.Fprintln(os.Stdout, color.YellowString("Usage:"), "broom", color.GreenString("<command>"), "[<args>]")
-		fmt.Fprintln(os.Stdout, "")
-		fmt.Fprintln(os.Stdout, "Broom is an API client powered by OpenAPI.")
-		fmt.Fprintln(os.Stdout, "")
+		fmt.Fprintln(color.Output, color.YellowString("Usage:"), "broom", color.GreenString("<command>"), "[<args>]")
+		fmt.Fprintln(color.Output, "")
+		fmt.Fprintln(color.Output, "Broom is an API client powered by OpenAPI.")
+		fmt.Fprintln(color.Output, "")
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 1, 4, ' ', 0)
+		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		fmt.Fprintln(w, color.YellowString("Commands:"))
 		fmt.Fprintf(w, "\t%v\t%v\n", color.GreenString("<profile>"), profileDescription)
 		fmt.Fprintf(w, "\t%v\t%v\n", color.GreenString("add"), addDescription)
@@ -124,7 +124,7 @@ func flagUsage(fs *flag.FlagSet) {
 		fmt.Fprintln(buf, line[:sidx], spacing, strings.Replace(line[sidx+1:], "\n", "\n"+strings.Repeat(" ", maxlen+2), -1))
 	}
 
-	fmt.Fprint(os.Stdout, buf.String())
+	fmt.Fprint(color.Output, buf.String())
 }
 
 // parseCommand returns the requested command, ignoring unparsed flags.
@@ -141,6 +141,6 @@ func parseCommand(args []string) string {
 
 // exitWithError prints the given error to stderr and exists.
 func exitWithError(err error) {
-	fmt.Fprintln(os.Stderr, color.RedString("Error:"), err)
+	fmt.Fprintln(color.Error, color.RedString("Error:"), err)
 	os.Exit(1)
 }

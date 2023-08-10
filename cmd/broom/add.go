@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -95,30 +94,30 @@ func addCmd(args []string) {
 	if err := broom.WriteConfig(".broom.yaml", cfg); err != nil {
 		exitWithError(err)
 	}
-	fmt.Fprintf(os.Stdout, "Added the %v profile to .broom.yaml\n", profile)
+	fmt.Fprintf(color.Output, "Added the %v profile to .broom.yaml\n", profile)
 }
 
 func addUsage() {
-	fmt.Fprintln(os.Stdout, color.YellowString("Usage:"), "broom add", color.GreenString("<profile>"), color.GreenString("<spec_file>"))
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "Adds a profile to the .broom.yaml config file in the current directory.")
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "The auth type, API key header, and server url will be auto-detected from")
-	fmt.Fprintln(os.Stdout, "the specification, unless they are provided via options.")
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, color.YellowString("Examples:"))
-	fmt.Fprintln(os.Stdout, "    Single profile:")
-	fmt.Fprintln(os.Stdout, `        broom add api openapi.yaml`)
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "    Single profile with Bearer auth via external command:")
-	fmt.Fprintln(os.Stdout, `        broom add api openapi.json --auth-cmd="sh get-token.sh" --auth-type=bearer`)
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "    Single profile with Basic auth:")
-	fmt.Fprintln(os.Stdout, `        broom add api openapi.yaml --auth="myuser:mypass" --auth-type=basic`)
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, "    Multiple profiles with different API keys:")
-	fmt.Fprintln(os.Stdout, `        broom add prod openapi.yaml --auth=PRODUCTION_KEY --auth-type=api-key`)
-	fmt.Fprintln(os.Stdout, `        broom add staging openapi.yaml --auth=STAGING_KEY --auth-type=api-key --server-url=htts://staging.my-api.io`)
-	fmt.Fprintln(os.Stdout, "")
-	fmt.Fprintln(os.Stdout, color.YellowString("Options:"))
+	fmt.Fprintln(color.Output, color.YellowString("Usage:"), "broom add", color.GreenString("<profile>"), color.GreenString("<spec_file>"))
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "Adds a profile to the .broom.yaml config file in the current directory.")
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "The auth type, API key header, and server url will be auto-detected from")
+	fmt.Fprintln(color.Output, "the specification, unless they are provided via options.")
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, color.YellowString("Examples:"))
+	fmt.Fprintln(color.Output, "    Single profile:")
+	fmt.Fprintln(color.Output, `        broom add api openapi.yaml`)
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "    Single profile with Bearer auth via external command:")
+	fmt.Fprintln(color.Output, `        broom add api openapi.json --auth-cmd="sh get-token.sh" --auth-type=bearer`)
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "    Single profile with Basic auth:")
+	fmt.Fprintln(color.Output, `        broom add api openapi.yaml --auth="myuser:mypass" --auth-type=basic`)
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, "    Multiple profiles with different API keys:")
+	fmt.Fprintln(color.Output, `        broom add prod openapi.yaml --auth=PRODUCTION_KEY --auth-type=api-key`)
+	fmt.Fprintln(color.Output, `        broom add staging openapi.yaml --auth=STAGING_KEY --auth-type=api-key --server-url=htts://staging.my-api.io`)
+	fmt.Fprintln(color.Output, "")
+	fmt.Fprintln(color.Output, color.YellowString("Options:"))
 }
