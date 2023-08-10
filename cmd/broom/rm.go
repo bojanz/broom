@@ -30,6 +30,9 @@ func rmCmd(args []string) {
 	if err != nil {
 		exitWithError(err)
 	}
+	if _, ok := cfg[profile]; !ok {
+		exitWithError(fmt.Errorf("unknown profile %v", profile))
+	}
 	delete(cfg, profile)
 	if err := broom.WriteConfig(".broom.yaml", cfg); err != nil {
 		exitWithError(err)
