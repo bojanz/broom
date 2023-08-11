@@ -20,7 +20,7 @@ import (
 const profileDescription = `List the profile's operations`
 
 func profileCmd(args []string) {
-	flags := flag.NewFlagSet("profile", flag.ExitOnError)
+	flags := flag.NewFlagSet("profile", flag.ContinueOnError)
 	var (
 		help    = flags.BoolP("help", "h", false, "Display this help text and exit")
 		headers = flags.StringArrayP("header", "H", nil, "Header. Can be used multiple times")
@@ -29,7 +29,9 @@ func profileCmd(args []string) {
 		verbose = flags.BoolP("verbose", "v", false, "Print the HTTP status and headers hefore the response body")
 	)
 	flags.SortFlags = false
-	flags.Parse(args)
+	if err := flags.Parse(args); err != nil {
+		exitWithError(err)
+	}
 
 	profile := flags.Arg(0)
 	cfg, err := broom.ReadConfig(".broom.yaml")

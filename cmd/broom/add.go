@@ -19,7 +19,7 @@ const addDescription = `Add a new profile`
 
 func addCmd(args []string) {
 	authTypes := broom.AuthTypes()
-	flags := flag.NewFlagSet("add", flag.ExitOnError)
+	flags := flag.NewFlagSet("add", flag.ContinueOnError)
 	var (
 		help            = flags.BoolP("help", "h", false, "Display this help text and exit")
 		authCredentials = flags.String("auth", "", "Auth credentials (e.g. access token or API key). Used to authenticate every request")
@@ -29,7 +29,9 @@ func addCmd(args []string) {
 		serverURL       = flags.String("server-url", "", "Server URL")
 	)
 	flags.SortFlags = false
-	flags.Parse(args)
+	if err := flags.Parse(args); err != nil {
+		exitWithError(err)
+	}
 	if *help || flags.NArg() < 3 {
 		addUsage()
 		flagUsage(flags)

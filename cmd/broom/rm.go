@@ -15,10 +15,12 @@ import (
 const rmDescription = `Remove a profile`
 
 func rmCmd(args []string) {
-	flags := flag.NewFlagSet("rm", flag.ExitOnError)
+	flags := flag.NewFlagSet("rm", flag.ContinueOnError)
 	help := flags.BoolP("help", "h", false, "Display this help text and exit")
 	flags.SortFlags = false
-	flags.Parse(args)
+	if err := flags.Parse(args); err != nil {
+		exitWithError(err)
+	}
 	if *help || flags.NArg() < 2 {
 		rmUsage()
 		flagUsage(flags)
