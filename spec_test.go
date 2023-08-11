@@ -109,7 +109,7 @@ func TestLoadOperations(t *testing.T) {
 						Name:        "price",
 						Description: "The product price, in cents.",
 						Type:        "integer",
-						Default:     any(float64(1099)),
+						Example:     any(float64(1099)),
 						Required:    true,
 					},
 					broom.Parameter{

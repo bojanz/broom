@@ -160,9 +160,24 @@ func operationUsage(op broom.Operation, profile string) {
 
 // prepareParameterDescription prepares a parameter description for display.
 //
+// Adds default and example values.
 // If a description has multiple lines, all lines are indented to match the first line's width.
 func prepareParameterDescription(p broom.Parameter) string {
+	values := make([]string, 0, 2)
+	if p.Default != nil {
+		values = append(values, fmt.Sprintf("%v %v", color.YellowString("Default:"), p.Default))
+	}
+	if p.Example != nil {
+		values = append(values, fmt.Sprintf("%v %v", color.YellowString("Example:"), p.Example))
+	}
+
+	description := p.Description
+	if len(values) > 0 {
+		description = fmt.Sprintf("%s\n%s", description, strings.Join(values, " "))
+	}
 	// Since colors are used for the name column, tabwriter requires color codes to
 	// be present even when that column is empty, for the tab width to be right.
-	return strings.ReplaceAll(p.Description, "\n", "\n\t"+color.GreenString("")+"\t")
+	description = strings.ReplaceAll(description, "\n", "\n\t"+color.GreenString("")+"\t")
+
+	return description
 }

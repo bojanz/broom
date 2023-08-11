@@ -223,6 +223,7 @@ type Parameter struct {
 	Style       string
 	Type        string
 	Enum        []string
+	Example     any
 	Default     any
 	Deprecated  bool
 	Required    bool
