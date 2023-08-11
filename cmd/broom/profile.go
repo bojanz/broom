@@ -96,7 +96,7 @@ func profileUsage(profile string, serverURL string, ops broom.Operations) {
 		fmt.Fprintln(color.Output, color.YellowString("Operations:"))
 		w := tabwriter.NewWriter(color.Output, 0, 1, 4, ' ', 0)
 		for _, tag := range ops.Tags() {
-			fmt.Fprintf(w, "\t%v\t\t\n", tag)
+			fmt.Fprintf(w, "\t%v\t\t\n", color.BlueString(tag))
 			for _, op := range ops.ByTag(tag) {
 				fmt.Fprintf(w, "\t    %v\t%v\n", color.GreenString(op.ID), op.SummaryWithFlags())
 			}
