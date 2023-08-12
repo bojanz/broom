@@ -10,13 +10,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/textproto"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/fatih/color"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/tidwall/pretty"
+	"golang.org/x/net/http/httpguts"
 )
 
 // Version is the current version, replaced at build time.
@@ -90,7 +93,7 @@ func Execute(req *http.Request, verbose bool) (Result, error) {
 	if verbose {
 		sb.WriteString(resp.Status)
 		sb.WriteByte('\n')
-		resp.Header.WriteSubset(&sb, nil)
+		writeHeaders(&sb, resp.Header, nil)
 		sb.WriteByte('\n')
 	}
 	if IsJSON(resp.Header.Get("Content-Type")) {
@@ -146,4 +149,31 @@ func RunCommand(command string) (string, error) {
 // Sanitize sanitizes the given string, stripping HTML and trailing newlines.
 func Sanitize(s string) string {
 	return strings.Trim(strip.StripTags(s), "\n")
+}
+
+// writeHeaders writes sorted, colored headers to the given writer.
+func writeHeaders(w io.StringWriter, headers http.Header, exclude []string) {
+	keys := make([]string, 0, len(headers))
+	for key := range headers {
+		if !slices.Contains(exclude, key) {
+			keys = append(keys, key)
+		}
+	}
+	slices.Sort(keys)
+
+	headerNewlineToSpace := strings.NewReplacer("\n", " ", "\r", " ")
+	for _, key := range keys {
+		if !httpguts.ValidHeaderFieldName(key) {
+			// Drop invalid headers the same way http.Header.WriteSubset() does.
+			continue
+		}
+		for _, v := range headers[key] {
+			v = headerNewlineToSpace.Replace(v)
+			v = textproto.TrimString(v)
+
+			w.WriteString(color.YellowString("%s: ", key))
+			w.WriteString(v)
+			w.WriteString("\n")
+		}
+	}
 }
