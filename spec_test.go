@@ -16,7 +16,6 @@ func TestLoadOperations(t *testing.T) {
 		Name:        "product_id",
 		Description: "The ID of the product.",
 		Type:        "string",
-		Default:     nil,
 		Required:    true,
 	}
 	vendorParam := broom.Parameter{
@@ -41,6 +40,7 @@ func TestLoadOperations(t *testing.T) {
 						Name:        "filter[owner_id]",
 						Description: "Allows filtering by owner_id.",
 						Type:        "string",
+						Deprecated:  true,
 					},
 					broom.Parameter{
 						In:          "query",
@@ -76,40 +76,15 @@ func TestLoadOperations(t *testing.T) {
 				Body: broom.ParameterList{
 					broom.Parameter{
 						In:          "body",
-						Name:        "currency_code",
-						Description: "The currency code.",
-						Type:        "string",
-						Enum:        []string{"EUR", "USD"},
-						Default:     any("USD"),
-						Required:    true,
-					},
-					broom.Parameter{
-						In:          "body",
-						Name:        "description",
-						Description: "The product description.",
-						Type:        "string",
-						Default:     nil,
-					},
-					broom.Parameter{
-						In:          "body",
-						Name:        "name",
-						Description: "The product name.",
-						Type:        "string",
-						Default:     nil,
-						Required:    true,
-					},
-					broom.Parameter{
-						In:          "body",
 						Name:        "owner_id",
 						Description: "ID of the owner. Defaults to the requester.",
 						Type:        "string",
 					},
 					broom.Parameter{
 						In:          "body",
-						Name:        "price",
-						Description: "The product price, in cents.",
-						Type:        "integer",
-						Example:     any(float64(1099)),
+						Name:        "name",
+						Description: "The product name.",
+						Type:        "string",
 						Required:    true,
 					},
 					broom.Parameter{
@@ -117,14 +92,36 @@ func TestLoadOperations(t *testing.T) {
 						Name:        "sku",
 						Description: "The product sku.",
 						Type:        "string",
-						Default:     nil,
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "description",
+						Description: "The product description.",
+						Type:        "string",
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "price",
+						Description: "The product price, in cents.",
+						Type:        "integer",
+						Example:     "1099",
+						Required:    true,
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "currency_code",
+						Description: "The currency code.",
+						Type:        "string",
+						Enum:        []string{"EUR", "USD"},
+						Default:     "USD",
+						Required:    true,
 					},
 					broom.Parameter{
 						In:          "body",
 						Name:        "status",
 						Description: "Whether the product is available for purchase.",
 						Type:        "boolean",
-						Default:     any(true),
+						Default:     "true",
 					},
 				},
 			},
@@ -155,45 +152,41 @@ func TestLoadOperations(t *testing.T) {
 				Body: broom.ParameterList{
 					broom.Parameter{
 						In:          "body",
-						Name:        "currency_code",
-						Description: "The currency code.",
-						Type:        "string",
-						Enum:        []string{"EUR", "USD"},
-						Default:     nil,
-					},
-					broom.Parameter{
-						In:          "body",
-						Name:        "description",
-						Description: "The product description.",
-						Type:        "string",
-						Default:     nil,
-					},
-					broom.Parameter{
-						In:          "body",
 						Name:        "name",
 						Description: "The product name.",
 						Type:        "string",
-						Default:     nil,
-					},
-					broom.Parameter{
-						In:          "body",
-						Name:        "price",
-						Description: "The product price, in cents.",
-						Type:        "integer",
-						Default:     nil,
 					},
 					broom.Parameter{
 						In:          "body",
 						Name:        "sku",
 						Description: "The product sku.",
 						Type:        "string",
+						Deprecated:  true,
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "description",
+						Description: "The product description.",
+						Type:        "string",
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "price",
+						Description: "The product price, in cents.",
+						Type:        "integer",
+					},
+					broom.Parameter{
+						In:          "body",
+						Name:        "currency_code",
+						Description: "The currency code.",
+						Type:        "string",
+						Enum:        []string{"EUR", "USD"},
 					},
 					broom.Parameter{
 						In:          "body",
 						Name:        "status",
 						Description: "Whether the product is available for purchase.",
 						Type:        "boolean",
-						Default:     nil,
 					},
 				},
 			},
@@ -214,14 +207,6 @@ func TestLoadOperations(t *testing.T) {
 	}
 
 	gotOps, err := broom.LoadOperations("testdata/openapi3.yaml")
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-	if diff := cmp.Diff(wantOps, gotOps); diff != "" {
-		t.Errorf("operation mismatch (-want +got):\n%s", diff)
-	}
-
-	gotOps, err = broom.LoadOperations("testdata/swagger.yaml")
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}

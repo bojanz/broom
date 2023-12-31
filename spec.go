@@ -4,40 +4,34 @@
 package broom
 
 import (
-	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash/adler32"
 	"net/http"
 	"os"
-	"sort"
 
-	"github.com/getkin/kin-openapi/openapi2"
-	"github.com/getkin/kin-openapi/openapi2conv"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/ghodss/yaml"
 	"github.com/iancoleman/strcase"
+	"github.com/pb33f/libopenapi"
+	"github.com/pb33f/libopenapi/datamodel/high/base"
+	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
+	"github.com/pb33f/libopenapi/orderedmap"
 )
 
 // LoadOperations loads available operations from a specification on disk.
 func LoadOperations(filename string) (Operations, error) {
 	spec, err := LoadSpec(filename)
 	if err != nil {
-		return nil, fmt.Errorf("load spec: %w", err)
+		return Operations{}, fmt.Errorf("load spec: %w", err)
 	}
-	if err := spec.Validate(context.Background()); err != nil {
-		return nil, fmt.Errorf("validate spec: %w", err)
+	if spec.Paths == nil {
+		return Operations{}, nil
 	}
-	// Pre-sort the path map to ensure a consistent ordering of operations.
-	paths := make([]string, 0, len(spec.Paths))
-	for path := range spec.Paths {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
 
 	ops := Operations{}
-	for _, path := range paths {
-		pathItem := spec.Paths[path]
+	for pair := orderedmap.First(spec.Paths.PathItems); pair != nil; pair = pair.Next() {
+		path := pair.Key()
+		pathItem := pair.Value()
 		if pathItem.Get != nil {
 			ops = append(ops, newOperationFromSpec(http.MethodGet, path, pathItem.Parameters, *pathItem.Get))
 		}
@@ -58,54 +52,33 @@ func LoadOperations(filename string) (Operations, error) {
 	return ops, nil
 }
 
-// LoadSpec loads an OpenAPI 2.0/3.0 specification from disk.
-func LoadSpec(filename string) (*openapi3.T, error) {
-	openapi3.DefineStringFormat("uuid", openapi3.FormatOfStringForUUIDOfRFC4122)
-	openapi3.DefineStringFormat("ulid", `^[0-7]{1}[0-9A-HJKMNP-TV-Z]{25}$`)
-
+// LoadSpec loads an OpenAPI 3.0/3.1 specification from disk.
+func LoadSpec(filename string) (v3.Document, error) {
 	b, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return v3.Document{}, err
 	}
-	aux := struct {
-		OpenAPI string `json:"openapi"`
-		Swagger string `json:"swagger"`
-	}{}
-	// We don't care if unmarshaling fails at this point, we'll assume
-	// OpenAPI 3.0 and let openapi3.Loader report the actual problem.
-	_ = yaml.Unmarshal(b, &aux)
-
-	var spec *openapi3.T
-	if aux.Swagger != "" {
-		var spec2 *openapi2.T
-		if err := yaml.Unmarshal(b, &spec2); err != nil {
-			return nil, fmt.Errorf("v2: %w", err)
-		}
-		spec, err = openapi2conv.ToV3(spec2)
-		if err != nil {
-			return nil, fmt.Errorf("v2 to v3: %w", err)
-		}
-	} else {
-		loader := openapi3.NewLoader()
-		loader.IsExternalRefsAllowed = true
-		spec, err = loader.LoadFromData(b)
-		if err != nil {
-			return nil, fmt.Errorf("v3: %w", err)
-		}
+	doc, err := libopenapi.NewDocument(b)
+	if err != nil {
+		return v3.Document{}, err
+	}
+	m, errs := doc.BuildV3Model()
+	if len(errs) > 0 {
+		return v3.Document{}, errors.Join(errs...)
 	}
 
-	return spec, nil
+	return m.Model, nil
 }
 
 // newOperationFromSpec creates a new operation from the loaded specification.
-func newOperationFromSpec(method string, path string, params openapi3.Parameters, specOp openapi3.Operation) Operation {
+func newOperationFromSpec(method string, path string, params []*v3.Parameter, specOp v3.Operation) Operation {
 	op := Operation{
-		ID:          strcase.ToKebab(specOp.OperationID),
+		ID:          strcase.ToKebab(specOp.OperationId),
 		Summary:     specOp.Summary,
 		Description: Sanitize(specOp.Description),
 		Method:      method,
 		Path:        path,
-		Deprecated:  specOp.Deprecated,
+		Deprecated:  getBool(specOp.Deprecated),
 	}
 	// Make it possible to run operations without an ID.
 	if op.ID == "" {
@@ -120,43 +93,39 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 	}
 	// Parameters can be defined per-path or per-operation.
 	for _, param := range params {
-		op.Parameters.Add(newParameterFromSpec(*param.Value))
+		op.Parameters.Add(newParameterFromSpec(*param))
 	}
 	for _, param := range specOp.Parameters {
-		op.Parameters.Add(newParameterFromSpec(*param.Value))
+		op.Parameters.Add(newParameterFromSpec(*param))
 	}
-	if specOp.RequestBody != nil {
-		for format, mediaType := range specOp.RequestBody.Value.Content {
-			op.BodyFormat = format
-			// Sort the property names to ensure a consistent order.
-			names := make([]string, 0, len(mediaType.Schema.Value.Properties))
-			for name := range mediaType.Schema.Value.Properties {
-				names = append(names, name)
-			}
-			sort.Strings(names)
+	if specOp.RequestBody != nil && specOp.RequestBody.Content != nil {
+		pair := orderedmap.First(specOp.RequestBody.Content)
+		format := pair.Key()
+		mediaType := pair.Value()
+		mediaTypeSchema := mediaType.Schema.Schema()
 
-			for _, name := range names {
-				schema := mediaType.Schema.Value.Properties[name]
-				required := false
-				for _, requiredName := range mediaType.Schema.Value.Required {
-					if requiredName == name {
-						required = true
-					}
+		op.BodyFormat = format
+		for propertyPair := orderedmap.First(mediaTypeSchema.Properties); propertyPair != nil; propertyPair = propertyPair.Next() {
+			name := propertyPair.Key()
+			schema := propertyPair.Value().Schema()
+			required := false
+			for _, requiredName := range mediaTypeSchema.Required {
+				if requiredName == name {
+					required = true
 				}
-
-				op.Parameters.Add(Parameter{
-					In:          "body",
-					Name:        name,
-					Description: Sanitize(schema.Value.Description),
-					Type:        getSchemaType(*schema.Value),
-					Enum:        castEnum(schema.Value.Enum),
-					Example:     schema.Value.Example,
-					Default:     schema.Value.Default,
-					Deprecated:  schema.Value.Deprecated,
-					Required:    required,
-				})
 			}
-			break
+
+			op.Parameters.Add(Parameter{
+				In:          "body",
+				Name:        name,
+				Description: Sanitize(schema.Description),
+				Type:        getSchemaType(schema),
+				Enum:        getEnum(schema),
+				Example:     getExample(schema),
+				Default:     getDefaultValue(schema),
+				Deprecated:  getBool(schema.Deprecated),
+				Required:    required,
+			})
 		}
 	}
 
@@ -164,39 +133,71 @@ func newOperationFromSpec(method string, path string, params openapi3.Parameters
 }
 
 // newParameterFromSpec creates a new parameter from the loaded specification.
-func newParameterFromSpec(specParam openapi3.Parameter) Parameter {
+func newParameterFromSpec(specParam v3.Parameter) Parameter {
+	schema := specParam.Schema.Schema()
+
 	return Parameter{
 		In:          specParam.In,
 		Name:        specParam.Name,
 		Description: Sanitize(specParam.Description),
 		Style:       specParam.Style,
-		Type:        getSchemaType(*specParam.Schema.Value),
-		Enum:        castEnum(specParam.Schema.Value.Enum),
-		Example:     specParam.Schema.Value.Example,
-		Default:     specParam.Schema.Value.Default,
+		Type:        getSchemaType(schema),
+		Enum:        getEnum(schema),
+		Example:     getExample(schema),
+		Default:     getDefaultValue(schema),
 		Deprecated:  specParam.Deprecated,
-		Required:    specParam.Required,
+		Required:    getBool(specParam.Required),
 	}
 }
 
 // getSchemaType retrieves the type of the given schema.
-func getSchemaType(schema openapi3.Schema) string {
-	schemaType := schema.Type
-	// CastString() needs to know the underlying type (array -> []string).
-	if schemaType == "array" {
-		schemaType = fmt.Sprintf("[]%v", schema.Items.Value.Type)
+func getSchemaType(schema *base.Schema) string {
+	// schema.Type can contain multiple values in OpenAPI 3.1, e.g:
+	// [string, null] or [string, integer]. Broom needs a single type
+	// so that it can cast the value (see Parameter#CastString).
+	schemaType := schema.Type[0]
+	// Expand the array type into the underlying type (array -> []string).
+	if schemaType == "array" && schema.Items.IsA() {
+		schemaType = fmt.Sprintf("[]%v", schema.Items.A.Schema().Type[0])
 	}
+
 	return schemaType
 }
 
-// castEnum converts enum values to strings.
-func castEnum(enum []any) []string {
-	if len(enum) == 0 {
-		return nil
+// getEnum retrieves the enum values defined on the given schema.
+func getEnum(schema *base.Schema) []string {
+	var enum []string
+	for _, v := range schema.Enum {
+		enum = append(enum, v.Value)
 	}
-	stringEnum := make([]string, 0, len(enum))
-	for _, v := range enum {
-		stringEnum = append(stringEnum, fmt.Sprintf("%v", v))
+
+	return enum
+}
+
+// getExample retrieves the examples defined on the given schema.
+func getExample(schema *base.Schema) string {
+	var exampleValue string
+	if len(schema.Examples) > 0 {
+		exampleValue = schema.Examples[0].Value
+	} else if schema.Example != nil {
+		exampleValue = schema.Example.Value
 	}
-	return stringEnum
+
+	return exampleValue
+}
+
+// getDefaultValue retrieves the default value defined on the given schema.
+func getDefaultValue(schema *base.Schema) string {
+	if schema.Default == nil {
+		return ""
+	}
+	return schema.Default.Value
+}
+
+// getBool converts a boolean reference into a boolean, turning nil into false.
+func getBool(v *bool) bool {
+	if v == nil {
+		return false
+	}
+	return *v
 }

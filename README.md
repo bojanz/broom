@@ -2,7 +2,7 @@
 
 Broom is an API client powered by OpenAPI.
 
-Point it to an OpenAPI spec, and it will provide a CLI for each defined operation.
+Point it to an OpenAPI 3.0/3.1 spec, and it will provide a CLI for each defined operation.
 JSON output is colored and formatted, authentication is handled.
 
 ## Install

@@ -164,10 +164,10 @@ func operationUsage(op broom.Operation, profile string) {
 // If a description has multiple lines, all lines are indented to match the first line's width.
 func prepareParameterDescription(p broom.Parameter) string {
 	values := make([]string, 0, 2)
-	if p.Default != nil {
+	if p.Default != "" {
 		values = append(values, fmt.Sprintf("%v %v", color.YellowString("Default:"), p.Default))
 	}
-	if p.Example != nil {
+	if p.Example != "" {
 		values = append(values, fmt.Sprintf("%v %v", color.YellowString("Example:"), p.Example))
 	}
 

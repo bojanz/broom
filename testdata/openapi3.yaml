@@ -23,6 +23,7 @@ paths:
         - in: query
           name: filter[owner_id]
           description: Allows filtering by owner_id.
+          deprecated: true
           schema:
             type: string
         - in: query
@@ -164,6 +165,7 @@ paths:
                 sku:
                   type: string
                   description: The product sku.
+                  deprecated: true
                 description:
                   type: string
                   description: The product description.

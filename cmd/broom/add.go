@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/pb33f/libopenapi/orderedmap"
 	flag "github.com/spf13/pflag"
 
 	"github.com/bojanz/broom"
@@ -55,20 +56,20 @@ func addCmd(args []string) {
 	}
 	specAuthType := authTypes[0]
 	specAPIKeyHeader := ""
-	for _, securityScheme := range spec.Components.SecuritySchemes {
-		if securityScheme.Value == nil {
-			continue
-		}
-		if securityScheme.Value.Type == "http" && securityScheme.Value.Scheme == "bearer" {
-			specAuthType = "bearer"
-			break
-		} else if securityScheme.Value.Type == "http" && securityScheme.Value.Scheme == "basic" {
-			specAuthType = "basic"
-			break
-		} else if securityScheme.Value.Type == "apiKey" && securityScheme.Value.In == "header" {
-			specAuthType = "api-key"
-			specAPIKeyHeader = securityScheme.Value.Name
-			break
+	if spec.Components != nil {
+		for pair := orderedmap.First(spec.Components.SecuritySchemes); pair != nil; pair = pair.Next() {
+			securityScheme := pair.Value()
+			if securityScheme.Type == "http" && securityScheme.Scheme == "bearer" {
+				specAuthType = "bearer"
+				break
+			} else if securityScheme.Type == "http" && securityScheme.Scheme == "basic" {
+				specAuthType = "basic"
+				break
+			} else if securityScheme.Type == "apiKey" && securityScheme.In == "header" {
+				specAuthType = "api-key"
+				specAPIKeyHeader = securityScheme.Name
+				break
+			}
 		}
 	}
 	if *serverURL == "" && len(spec.Servers) > 0 {
