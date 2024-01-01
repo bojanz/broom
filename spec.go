@@ -13,6 +13,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/pb33f/libopenapi"
+	"github.com/pb33f/libopenapi/datamodel"
 	"github.com/pb33f/libopenapi/datamodel/high/base"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 	"github.com/pb33f/libopenapi/orderedmap"
@@ -58,7 +59,9 @@ func LoadSpec(filename string) (v3.Document, error) {
 	if err != nil {
 		return v3.Document{}, err
 	}
-	doc, err := libopenapi.NewDocument(b)
+	doc, err := libopenapi.NewDocumentWithConfiguration(b, &datamodel.DocumentConfiguration{
+		AllowRemoteReferences: true,
+	})
 	if err != nil {
 		return v3.Document{}, err
 	}
