@@ -324,12 +324,12 @@ func TestOperation_RequestWithBody(t *testing.T) {
 		},
 		broom.Parameter{
 			In:   "body",
-			Name: "storage",
+			Name: "infra.storage",
 			Type: "integer",
 		},
 		broom.Parameter{
 			In:   "body",
-			Name: "vcpu",
+			Name: "infra.vcpu",
 			Type: "number",
 		},
 		broom.Parameter{
@@ -348,11 +348,11 @@ func TestOperation_RequestWithBody(t *testing.T) {
 	}
 
 	// Invalid integer.
-	values, _ = broom.ParseRequestValues(nil, nil, "", "storage=3.2")
+	values, _ = broom.ParseRequestValues(nil, nil, "", "infra.storage=3.2")
 	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
-	} else if err.Error() != `could not process storage: "3.2" is not a valid integer` {
+	} else if err.Error() != `could not process infra.storage: "3.2" is not a valid integer` {
 		t.Errorf("unexpected error %v", err)
 	}
 
@@ -366,21 +366,23 @@ func TestOperation_RequestWithBody(t *testing.T) {
 	}
 
 	// Invalid number.
-	values, _ = broom.ParseRequestValues(nil, nil, "", "vcpu=1,7")
+	values, _ = broom.ParseRequestValues(nil, nil, "", "infra.vcpu=1,7")
 	_, err = op.Request("https://myapi.io", values)
 	if err == nil {
 		t.Error("expected error, got nil")
-	} else if err.Error() != `could not process vcpu: "1,7" is not a valid number` {
+	} else if err.Error() != `could not process infra.vcpu: "1,7" is not a valid number` {
 		t.Errorf("unexpected error %v", err)
 	}
 
 	// Valid data.
-	values, _ = broom.ParseRequestValues(nil, nil, "", "email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&storage=20480&vcpu=0.5&status=true")
+	// Note: "infra=ignore" is passed as a dummy value to confirm that it does not
+	// interfere with the expansion of nested parameters (infra.storage and infra.vcpu).
+	values, _ = broom.ParseRequestValues(nil, nil, "", "email=js@domain&lucky_numbers=4,8,15,16,23,42&username=jsmith&roles=admin,owner&infra=ignore&infra.storage=20480&infra.vcpu=0.5&status=true&personal.name.first=John&personal.name.last=Smith")
 	req, err = op.Request("https://myapi.io", values)
 	b, _ = io.ReadAll(req.Body)
 	got = string(b)
 	// Note: keys are always alphabetical, due to how encoding/json treats maps.
-	want = `{"email":"js@domain","lucky_numbers":[4,8,15,16,23,42],"roles":["admin","owner"],"status":true,"storage":20480,"username":"jsmith","vcpu":0.5}`
+	want = `{"email":"js@domain","infra":{"storage":20480,"vcpu":0.5},"lucky_numbers":[4,8,15,16,23,42],"personal":{"name":{"first":"John","last":"Smith"}},"roles":["admin","owner"],"status":true,"username":"jsmith"}`
 	if got != want {
 		t.Errorf("got %v, want %v", got, want)
 	}

@@ -10,6 +10,7 @@ import (
 	"hash/adler32"
 	"net/http"
 	"os"
+	"slices"
 
 	"github.com/iancoleman/strcase"
 	"github.com/pb33f/libopenapi"
@@ -107,29 +108,8 @@ func newOperationFromSpec(method string, path string, params []*v3.Parameter, sp
 		mediaType := pair.Value()
 		mediaTypeSchema := mediaType.Schema.Schema()
 
+		op.Parameters.Add(newBodyParameters("", mediaTypeSchema)...)
 		op.BodyFormat = format
-		for propertyPair := orderedmap.First(mediaTypeSchema.Properties); propertyPair != nil; propertyPair = propertyPair.Next() {
-			name := propertyPair.Key()
-			schema := propertyPair.Value().Schema()
-			required := false
-			for _, requiredName := range mediaTypeSchema.Required {
-				if requiredName == name {
-					required = true
-				}
-			}
-
-			op.Parameters.Add(Parameter{
-				In:          "body",
-				Name:        name,
-				Description: Sanitize(schema.Description),
-				Type:        getSchemaType(schema),
-				Enum:        getEnum(schema),
-				Example:     getExample(schema),
-				Default:     getDefaultValue(schema),
-				Deprecated:  getBool(schema.Deprecated),
-				Required:    required,
-			})
-		}
 	}
 
 	return op
@@ -151,6 +131,35 @@ func newParameterFromSpec(specParam v3.Parameter) Parameter {
 		Deprecated:  specParam.Deprecated,
 		Required:    getBool(specParam.Required),
 	}
+}
+
+// newBodyParameters creates a slice of body parameters from the given schema.
+func newBodyParameters(prefix string, schema *base.Schema) []Parameter {
+	parameters := make([]Parameter, 0, 10)
+	for pair := orderedmap.First(schema.Properties); pair != nil; pair = pair.Next() {
+		propertyName := pair.Key()
+		propertySchema := pair.Value().Schema()
+		propertySchemaType := getSchemaType(propertySchema)
+
+		if propertySchemaType == "object" {
+			// Nested parameters found, flatten them.
+			parameters = append(parameters, newBodyParameters(prefix+propertyName+".", propertySchema)...)
+		} else {
+			parameters = append(parameters, Parameter{
+				In:          "body",
+				Name:        prefix + propertyName,
+				Description: Sanitize(propertySchema.Description),
+				Type:        propertySchemaType,
+				Enum:        getEnum(propertySchema),
+				Example:     getExample(propertySchema),
+				Default:     getDefaultValue(propertySchema),
+				Deprecated:  getBool(propertySchema.Deprecated),
+				Required:    slices.Contains(schema.Required, propertyName),
+			})
+		}
+	}
+
+	return parameters
 }
 
 // getSchemaType retrieves the type of the given schema.

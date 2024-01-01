@@ -170,6 +170,27 @@ func (op Operation) requestBody(bodyValues url.Values) ([]byte, error) {
 				jsonValues[name] = value
 			}
 		}
+		// Process nested parameters.
+		for name, value := range jsonValues {
+			if !strings.Contains(name, ".") {
+				continue
+			}
+			nameParts := strings.Split(name, ".")
+			temp := jsonValues
+			for i, subname := range nameParts {
+				if i == len(nameParts)-1 {
+					temp[subname] = value
+					break
+				}
+
+				if _, ok := temp[subname].(map[string]any); !ok {
+					temp[subname] = make(map[string]any)
+				}
+				temp = temp[subname].(map[string]any)
+			}
+			delete(jsonValues, name)
+		}
+
 		return json.Marshal(jsonValues)
 	} else if op.BodyFormat == "application/x-www-form-urlencoded" {
 		return []byte(bodyValues.Encode()), nil

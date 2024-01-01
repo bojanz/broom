@@ -107,10 +107,24 @@ paths:
                   description: The currency code.
                   enum: [EUR, USD]
                   default: USD
-                status:
-                  type: boolean
-                  description: Whether the product is available for purchase.
-                  default: true
+                meta:
+                  type: object
+                  properties:
+                    category:
+                      type: object
+                      properties:
+                        catalog:
+                          type: string
+                          description: The catalog category.
+                          deprecated: true
+                    published:
+                      type: boolean
+                      description: Whether the product is visible to customers.
+                      default: true
+                    in_stock:
+                      type: boolean
+                      description: Whether the product is in stock.
+                      default: true
       responses:
         '201':
           description: Successful response.
@@ -165,7 +179,6 @@ paths:
                 sku:
                   type: string
                   description: The product sku.
-                  deprecated: true
                 description:
                   type: string
                   description: The product description.
@@ -176,9 +189,15 @@ paths:
                   type: string
                   description: The currency code.
                   enum: [EUR, USD]
-                status:
-                  type: boolean
-                  description: Whether the product is available for purchase.
+                meta:
+                  type: object
+                  properties:
+                    published:
+                      type: boolean
+                      description: Whether the product is visible to customers.
+                    in_stock:
+                      type: boolean
+                      description: Whether the product is in stock.
       responses:
         '200':
           description: Successful response.
